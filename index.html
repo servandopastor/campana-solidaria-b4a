@@ -6,116 +6,205 @@
     <title>Campaña Solidaria B4A</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-4 sm:p-8">
-    <div class="max-w-3xl mx-auto space-y-6">
-        <h1 id="campaña-solidaria-b4a" class="text-2xl sm:text-3xl font-bold text-center mb-6">Campaña Solidaria B4A</h1>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-3xl mx-auto space-y-8">
+        <h1 id="campaña-solidaria-b4a" class="text-3xl font-bold text-center mb-8">Campaña Solidaria B4A</h1>
 
-        <button id="editarRegistros" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded mb-4">
-            Editar Registros
-        </button>
-
-        <!-- Resto de las secciones (Resumen, Almacén, Carro, etc.) -->
-        <!-- ... -->
-
-    </div>
-
-    <!-- Modal para edición de registros -->
-    <div id="modalEdicion" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <h3 class="text-lg font-bold mb-4">Editar Registros</h3>
-            <input type="password" id="claveEdicion" placeholder="Ingrese la clave" class="w-full p-2 mb-4 border rounded">
-            <div id="opcionesEdicion" class="hidden">
-                <button id="editarProductos" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2">Editar Productos</button>
-                <button id="editarFamilias" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Editar Familias</button>
+        <section class="bg-white p-4 rounded shadow">
+            <h2 id="resumen" class="text-2xl font-semibold mb-4">Resumen</h2>
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span class="font-medium">Productos Comprometidos:</span> 
+                    <span id="porcentajeProductos" class="font-bold">0.0%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-medium">Familias Comprometidas:</span> 
+                    <span id="porcentajeFamilias" class="font-bold">0.0%</span>
+                </div>
             </div>
-            <button id="cerrarModal" class="mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Cerrar</button>
-        </div>
+        </section>
+
+        <section class="bg-white p-4 rounded shadow">
+            <h2 id="almacén" class="text-2xl font-semibold mb-4">Almacén</h2>
+            <div id="almacen" class="space-y-2"></div>
+        </section>
+
+        <section class="bg-white p-4 rounded shadow">
+            <h2 id="carro" class="text-2xl font-semibold mb-4">Carro</h2>
+            <div id="carroItems" class="mb-6 space-y-2"></div>
+            <div class="flex items-center space-x-4">
+                <select id="selectFamilia" class="flex-grow p-2 border rounded">
+                    <option value="">Selecciona Familia</option>
+                </select>
+                <button id="confirmarCooperacion" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                    Confirmar Cooperación
+                </button>
+            </div>
+        </section>
+
+        <section class="bg-white p-4 rounded shadow">
+            <h2 id="bodega-solidaria" class="text-2xl font-semibold mb-4">Bodega Solidaria</h2>
+            <table id="bodegaSolidaria" class="w-full">
+                <thead>
+                    <tr>
+                        <th class="text-left">Producto</th>
+                        <th class="text-left">Cantidad</th>
+                        <th class="text-left">Familia</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section class="bg-white p-4 rounded shadow">
+            <h2 id="familias-pendientes" class="text-2xl font-semibold mb-4">Familias Pendientes</h2>
+            <div id="familiasPendientes" class="space-y-2"></div>
+        </section>
     </div>
 
     <script>
-        const GITHUB_TOKEN = 'tu_token_aquí';
-        const REPO_OWNER = 'tu_usuario_de_github';
-        const REPO_NAME = 'tu_repositorio';
-
         let productos = [];
         let familias = [];
         let carro = [];
         let bodega = [];
 
-        // Funciones existentes (fetchGitHubFile, updateGitHubFile, getFileSHA, loadData, saveData, etc.)
-        // ...
+        async function loadData() {
+            try {
+                const [productosData, familiasData] = await Promise.all([
+                    fetch('data/productos.json').then(res => res.json()),
+                    fetch('data/familias.json').then(res => res.json())
+                ]);
 
-        // Nueva función para mostrar el modal de edición
-        function mostrarModalEdicion() {
-            document.getElementById('modalEdicion').classList.remove('hidden');
-        }
+                productos = productosData;
+                familias = familiasData;
 
-        // Nueva función para cerrar el modal de edición
-        function cerrarModalEdicion() {
-            document.getElementById('modalEdicion').classList.add('hidden');
-            document.getElementById('claveEdicion').value = '';
-            document.getElementById('opcionesEdicion').classList.add('hidden');
-        }
-
-        // Nueva función para verificar la clave
-        function verificarClave() {
-            const clave = document.getElementById('claveEdicion').value;
-            if (clave === 'servandopastor') {
-                document.getElementById('opcionesEdicion').classList.remove('hidden');
-            } else {
-                alert('Clave incorrecta');
+                updateUI();
+            } catch (error) {
+                console.error('Error loading data:', error);
             }
         }
 
-        // Función para editar productos (ejemplo básico)
-        async function editarProductos() {
-            const nuevoProducto = prompt('Ingrese el nuevo producto en formato JSON (ej: {"id":"12","nombre":"Nuevo Producto","cantidad":10,"unidad":"unidades"})');
-            if (nuevoProducto) {
-                try {
-                    const productoObj = JSON.parse(nuevoProducto);
-                    productos.push(productoObj);
-                    await saveData();
-                    alert('Producto agregado con éxito');
-                    updateUI();
-                } catch (error) {
-                    alert('Error al agregar el producto. Asegúrese de que el formato sea correcto.');
+        function updateUI() {
+            updateAlmacen();
+            updateCarro();
+            updateBodegaSolidaria();
+            updateFamiliasPendientes();
+            updateResumen();
+        }
+
+        function updateAlmacen() {
+            const almacenEl = document.getElementById('almacen');
+            almacenEl.innerHTML = productos.map(p => `
+                <div class="flex justify-between items-center">
+                    <span>${p.nombre}: ${p.cantidad} ${p.unidad}</span>
+                    <div>
+                        <button onclick="addToCart('${p.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded mr-2">+</button>
+                        <button onclick="removeFromCart('${p.id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">-</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateCarro() {
+            const carroEl = document.getElementById('carroItems');
+            carroEl.innerHTML = carro.length ? carro.map(c => `
+                <div class="flex justify-between items-center">
+                    <span>${c.nombre}: ${c.cantidad} ${c.unidad}</span>
+                    <div>
+                        <button onclick="addToCart('${c.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded mr-2">+</button>
+                        <button onclick="removeFromCart('${c.id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">-</button>
+                    </div>
+                </div>
+            `).join('') : '<p>El carro está vacío</p>';
+        }
+
+        function updateBodegaSolidaria() {
+            const bodegaEl = document.querySelector('#bodegaSolidaria tbody');
+            bodegaEl.innerHTML = bodega.map(b => `
+                <tr>
+                    <td>${b.producto}</td>
+                    <td>${b.cantidad}</td>
+                    <td>${b.familia}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateFamiliasPendientes() {
+            const familiasPendientesEl = document.getElementById('familiasPendientes');
+            const familiasPendientes = familias.filter(f => !bodega.some(b => b.familia === f.nombre));
+            familiasPendientesEl.innerHTML = familiasPendientes.map(f => `
+                <div>${f.nombre}</div>
+            `).join('');
+
+            const selectFamilia = document.getElementById('selectFamilia');
+            selectFamilia.innerHTML = '<option value="">Selecciona Familia</option>' + 
+                familiasPendientes.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
+        }
+
+        function updateResumen() {
+            const totalProductos = productos.reduce((sum, p) => sum + p.cantidad, 0);
+            const productosComprometidos = bodega.reduce((sum, b) => sum + b.cantidad, 0);
+            const porcentajeProductos = (productosComprometidos / totalProductos * 100).toFixed(1);
+            document.getElementById('porcentajeProductos').textContent = `${porcentajeProductos}%`;
+
+            const porcentajeFamilias = ((familias.length - familias.filter(f => !bodega.some(b => b.familia === f.nombre)).length) / familias.length * 100).toFixed(1);
+            document.getElementById('porcentajeFamilias').textContent = `${porcentajeFamilias}%`;
+        }
+
+        function addToCart(productId) {
+            const producto = productos.find(p => p.id === productId);
+            const itemEnCarro = carro.find(c => c.id === productId);
+
+            if (producto && producto.cantidad > 0) {
+                if (itemEnCarro) {
+                    itemEnCarro.cantidad++;
+                } else {
+                    carro.push({...producto, cantidad: 1});
                 }
+                producto.cantidad--;
+                updateUI();
             }
         }
 
-        // Función para editar familias (ejemplo básico)
-        async function editarFamilias() {
-            const nuevaFamilia = prompt('Ingrese la nueva familia en formato JSON (ej: {"id":"37","nombre":"Nueva Familia"})');
-            if (nuevaFamilia) {
-                try {
-                    const familiaObj = JSON.parse(nuevaFamilia);
-                    familias.push(familiaObj);
-                    await saveData();
-                    alert('Familia agregada con éxito');
-                    updateUI();
-                } catch (error) {
-                    alert('Error al agregar la familia. Asegúrese de que el formato sea correcto.');
+        function removeFromCart(productId) {
+            const itemEnCarro = carro.find(c => c.id === productId);
+            const producto = productos.find(p => p.id === productId);
+
+            if (itemEnCarro && itemEnCarro.cantidad > 0) {
+                itemEnCarro.cantidad--;
+                producto.cantidad++;
+                
+                if (itemEnCarro.cantidad === 0) {
+                    const index = carro.indexOf(itemEnCarro);
+                    carro.splice(index, 1);
                 }
+                
+                updateUI();
             }
         }
 
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData();
+        document.getElementById('confirmarCooperacion').addEventListener('click', () => {
+            const familiaId = document.getElementById('selectFamilia').value;
+            if (!familiaId) {
+                alert('Por favor, selecciona una familia');
+                return;
+            }
 
-            document.getElementById('editarRegistros').addEventListener('click', mostrarModalEdicion);
-            document.getElementById('cerrarModal').addEventListener('click', cerrarModalEdicion);
-            document.getElementById('claveEdicion').addEventListener('keyup', (event) => {
-                if (event.key === 'Enter') {
-                    verificarClave();
-                }
+            const familia = familias.find(f => f.id === familiaId);
+
+            carro.forEach(item => {
+                bodega.push({
+                    producto: item.nombre,
+                    cantidad: item.cantidad,
+                    familia: familia.nombre
+                });
             });
-            document.getElementById('editarProductos').addEventListener('click', editarProductos);
-            document.getElementById('editarFamilias').addEventListener('click', editarFamilias);
+
+            carro = [];  // Vaciar el carro
+            updateUI();
         });
 
-        // Resto del código JavaScript existente
-        // ...
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>
