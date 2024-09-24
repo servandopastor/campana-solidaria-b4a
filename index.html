@@ -1,95 +1,121 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- ... (código del head sin cambios) ... -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaña Solidaria B4A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-8">
-    <!-- ... (estructura HTML sin cambios) ... -->
+<body class="bg-gray-100 p-4 sm:p-8">
+    <div class="max-w-3xl mx-auto space-y-6">
+        <h1 id="campaña-solidaria-b4a" class="text-2xl sm:text-3xl font-bold text-center mb-6">Campaña Solidaria B4A</h1>
+
+        <button id="editarRegistros" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded mb-4">
+            Editar Registros
+        </button>
+
+        <!-- Resto de las secciones (Resumen, Almacén, Carro, etc.) -->
+        <!-- ... -->
+
+    </div>
+
+    <!-- Modal para edición de registros -->
+    <div id="modalEdicion" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <h3 class="text-lg font-bold mb-4">Editar Registros</h3>
+            <input type="password" id="claveEdicion" placeholder="Ingrese la clave" class="w-full p-2 mb-4 border rounded">
+            <div id="opcionesEdicion" class="hidden">
+                <button id="editarProductos" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2">Editar Productos</button>
+                <button id="editarFamilias" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Editar Familias</button>
+            </div>
+            <button id="cerrarModal" class="mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Cerrar</button>
+        </div>
+    </div>
 
     <script>
-        const GITHUB_TOKEN = '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';
-        const REPO_OWNER = 'servandopastor';
-        const REPO_NAME = 'campana-solidaria-b4a';
+        const GITHUB_TOKEN = 'tu_token_aquí';
+        const REPO_OWNER = 'tu_usuario_de_github';
+        const REPO_NAME = 'tu_repositorio';
 
-        async function fetchGitHubFile(path) {
-            const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
-                headers: {
-                    'Authorization': `token ${GITHUB_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-            const data = await response.json();
-            return JSON.parse(atob(data.content));
+        let productos = [];
+        let familias = [];
+        let carro = [];
+        let bodega = [];
+
+        // Funciones existentes (fetchGitHubFile, updateGitHubFile, getFileSHA, loadData, saveData, etc.)
+        // ...
+
+        // Nueva función para mostrar el modal de edición
+        function mostrarModalEdicion() {
+            document.getElementById('modalEdicion').classList.remove('hidden');
         }
 
-        async function updateGitHubFile(path, content) {
-            const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `token ${GITHUB_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: 'Actualizar datos',
-                    content: btoa(JSON.stringify(content)),
-                    sha: await getFileSHA(path)
-                })
-            });
-            return response.ok;
+        // Nueva función para cerrar el modal de edición
+        function cerrarModalEdicion() {
+            document.getElementById('modalEdicion').classList.add('hidden');
+            document.getElementById('claveEdicion').value = '';
+            document.getElementById('opcionesEdicion').classList.add('hidden');
         }
 
-        async function getFileSHA(path) {
-            const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
-                headers: {
-                    'Authorization': `token ${GITHUB_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-            const data = await response.json();
-            return data.sha;
-        }
-
-        async function loadData() {
-            try {
-                productos = await fetchGitHubFile('data/productos.json');
-                familias = await fetchGitHubFile('data/familias.json');
-                carro = await fetchGitHubFile('data/carro.json');
-                bodega = await fetchGitHubFile('data/bodega.json');
-                updateUI();
-            } catch (error) {
-                console.error('Error loading data:', error);
+        // Nueva función para verificar la clave
+        function verificarClave() {
+            const clave = document.getElementById('claveEdicion').value;
+            if (clave === 'servandopastor') {
+                document.getElementById('opcionesEdicion').classList.remove('hidden');
+            } else {
+                alert('Clave incorrecta');
             }
         }
 
-        async function saveData() {
-            try {
-                await updateGitHubFile('data/productos.json', productos);
-                await updateGitHubFile('data/carro.json', carro);
-                await updateGitHubFile('data/bodega.json', bodega);
-            } catch (error) {
-                console.error('Error saving data:', error);
+        // Función para editar productos (ejemplo básico)
+        async function editarProductos() {
+            const nuevoProducto = prompt('Ingrese el nuevo producto en formato JSON (ej: {"id":"12","nombre":"Nuevo Producto","cantidad":10,"unidad":"unidades"})');
+            if (nuevoProducto) {
+                try {
+                    const productoObj = JSON.parse(nuevoProducto);
+                    productos.push(productoObj);
+                    await saveData();
+                    alert('Producto agregado con éxito');
+                    updateUI();
+                } catch (error) {
+                    alert('Error al agregar el producto. Asegúrese de que el formato sea correcto.');
+                }
             }
         }
 
-        // Actualiza las funciones existentes para usar saveData()
-        function addToCart(productId) {
-            // ... (código existente) ...
-            saveData();
+        // Función para editar familias (ejemplo básico)
+        async function editarFamilias() {
+            const nuevaFamilia = prompt('Ingrese la nueva familia en formato JSON (ej: {"id":"37","nombre":"Nueva Familia"})');
+            if (nuevaFamilia) {
+                try {
+                    const familiaObj = JSON.parse(nuevaFamilia);
+                    familias.push(familiaObj);
+                    await saveData();
+                    alert('Familia agregada con éxito');
+                    updateUI();
+                } catch (error) {
+                    alert('Error al agregar la familia. Asegúrese de que el formato sea correcto.');
+                }
+            }
         }
 
-        function removeFromCart(productId) {
-            // ... (código existente) ...
-            saveData();
-        }
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
 
-        document.getElementById('confirmarCooperacion').addEventListener('click', async () => {
-            // ... (código existente) ...
-            await saveData();
+            document.getElementById('editarRegistros').addEventListener('click', mostrarModalEdicion);
+            document.getElementById('cerrarModal').addEventListener('click', cerrarModalEdicion);
+            document.getElementById('claveEdicion').addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    verificarClave();
+                }
+            });
+            document.getElementById('editarProductos').addEventListener('click', editarProductos);
+            document.getElementById('editarFamilias').addEventListener('click', editarFamilias);
         });
 
-        // ... (resto del código JavaScript sin cambios) ...
-
+        // Resto del código JavaScript existente
+        // ...
     </script>
 </body>
 </html>
