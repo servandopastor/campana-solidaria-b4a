@@ -8,50 +8,56 @@
 </head>
 <body class="bg-gray-100 p-8">
     <div class="max-w-3xl mx-auto space-y-8">
-        <h1 id="campaña-solidaria-b4a" class="text-2xl font-normal text-center mb-8">Campaña Solidaria B4A</h1>
+        <h1 id="campaña-solidaria-b4a" class="text-3xl font-bold text-center mb-8">Campaña Solidaria B4A</h1>
 
-        <section>
-            <h2 id="resumen" class="text-xl mb-4">Resumen</h2>
+        <section class="bg-white p-4 rounded shadow">
+            <h2 id="resumen" class="text-2xl font-semibold mb-4">Resumen</h2>
             <div class="space-y-2">
                 <div class="flex justify-between">
-                    Productos Comprometidos: <span id="porcentajeProductos">0.0%</span>
+                    <span class="font-medium">Productos Comprometidos:</span> 
+                    <span id="porcentajeProductos" class="font-bold">0.0%</span>
                 </div>
                 <div class="flex justify-between">
-                    Familias Comprometidas: <span id="porcentajeFamilias">0.0%</span>
+                    <span class="font-medium">Familias Comprometidas:</span> 
+                    <span id="porcentajeFamilias" class="font-bold">0.0%</span>
                 </div>
             </div>
         </section>
 
-        <section>
-            <h2 id="almacén" class="text-xl mb-4">Almacén</h2>
+        <section class="bg-white p-4 rounded shadow">
+            <h2 id="almacén" class="text-2xl font-semibold mb-4">Almacén</h2>
             <div id="almacen" class="space-y-2"></div>
         </section>
 
-        <section>
-            <h2 id="carro" class="text-xl mb-4">Carro</h2>
-            <div id="carro" class="mb-6 space-y-2"></div>
-            <select id="selectFamilia" class="mb-4">
-                <option value="">Selecciona Familia</option>
-            </select>
-            <button id="confirmarCooperacion" class="bg-blue-500 text-white px-4 py-2 rounded">Confirmar Cooperación</button>
+        <section class="bg-white p-4 rounded shadow">
+            <h2 id="carro" class="text-2xl font-semibold mb-4">Carro</h2>
+            <div id="carroItems" class="mb-6 space-y-2"></div>
+            <div class="flex items-center space-x-4">
+                <select id="selectFamilia" class="flex-grow p-2 border rounded">
+                    <option value="">Selecciona Familia</option>
+                </select>
+                <button id="confirmarCooperacion" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                    Confirmar Cooperación
+                </button>
+            </div>
         </section>
 
-        <section>
-            <h2 id="bodega-solidaria" class="text-xl mb-4">Bodega Solidaria</h2>
+        <section class="bg-white p-4 rounded shadow">
+            <h2 id="bodega-solidaria" class="text-2xl font-semibold mb-4">Bodega Solidaria</h2>
             <table id="bodegaSolidaria" class="w-full">
                 <thead>
                     <tr>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Familia</th>
+                        <th class="text-left">Producto</th>
+                        <th class="text-left">Cantidad</th>
+                        <th class="text-left">Familia</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </section>
 
-        <section>
-            <h2 id="familias-pendientes" class="text-xl mb-4">Familias Pendientes</h2>
+        <section class="bg-white p-4 rounded shadow">
+            <h2 id="familias-pendientes" class="text-2xl font-semibold mb-4">Familias Pendientes</h2>
             <div id="familiasPendientes" class="space-y-2"></div>
         </section>
     </div>
@@ -62,7 +68,6 @@
         let carro = [];
         let bodega = [];
 
-        // Función para cargar datos desde GitHub
         async function loadData() {
             try {
                 const [productosData, familiasData] = await Promise.all([
@@ -79,7 +84,6 @@
             }
         }
 
-        // Función para actualizar la interfaz
         function updateUI() {
             updateAlmacen();
             updateCarro();
@@ -91,18 +95,27 @@
         function updateAlmacen() {
             const almacenEl = document.getElementById('almacen');
             almacenEl.innerHTML = productos.map(p => `
-                <div>${p.nombre}: ${p.cantidad} ${p.unidad}
-                    <button onclick="addToCart('${p.id}')">+</button>
-                    <button onclick="removeFromCart('${p.id}')">-</button>
+                <div class="flex justify-between items-center">
+                    <span>${p.nombre}: ${p.cantidad} ${p.unidad}</span>
+                    <div>
+                        <button onclick="addToCart('${p.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded mr-2">+</button>
+                        <button onclick="removeFromCart('${p.id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">-</button>
+                    </div>
                 </div>
             `).join('');
         }
 
         function updateCarro() {
-            const carroEl = document.getElementById('carro');
-            carroEl.innerHTML = carro.map(c => `
-                <div>${c.nombre}: ${c.cantidad} ${c.unidad}</div>
-            `).join('');
+            const carroEl = document.getElementById('carroItems');
+            carroEl.innerHTML = carro.length ? carro.map(c => `
+                <div class="flex justify-between items-center">
+                    <span>${c.nombre}: ${c.cantidad} ${c.unidad}</span>
+                    <div>
+                        <button onclick="addToCart('${c.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded mr-2">+</button>
+                        <button onclick="removeFromCart('${c.id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">-</button>
+                    </div>
+                </div>
+            `).join('') : '<p>El carro está vacío</p>';
         }
 
         function updateBodegaSolidaria() {
@@ -138,7 +151,6 @@
             document.getElementById('porcentajeFamilias').textContent = `${porcentajeFamilias}%`;
         }
 
-        // Funciones para manipular el carro
         function addToCart(productId) {
             const producto = productos.find(p => p.id === productId);
             const itemEnCarro = carro.find(c => c.id === productId);
@@ -171,13 +183,6 @@
             }
         }
 
-        // Función para actualizar datos en GitHub (esto será implementado más adelante con GitHub Actions)
-        async function updateData(file, data) {
-            console.log(`Actualizando ${file} con`, data);
-            // Aquí implementaremos la lógica para actualizar los archivos en GitHub
-        }
-
-        // Event listener para confirmar cooperación
         document.getElementById('confirmarCooperacion').addEventListener('click', () => {
             const familiaId = document.getElementById('selectFamilia').value;
             if (!familiaId) {
@@ -199,7 +204,6 @@
             updateUI();
         });
 
-        // Inicializar la página cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
