@@ -1,17 +1,68 @@
 [
   {
     "id": "1",
-    "nombre": "Arroz",
-    "cantidad": 100
+    "nombre": "Paquetes de sémola",
+    "cantidad": 3,
+    "unidad": "paquetes"
   },
   {
     "id": "2",
-    "nombre": "Frijoles",
-    "cantidad": 80
+    "nombre": "Paquetes de maicena",
+    "cantidad": 3,
+    "unidad": "paquetes"
   },
   {
     "id": "3",
+    "nombre": "Paquetes de carne de soya",
+    "cantidad": 3,
+    "unidad": "paquetes"
+  },
+  {
+    "id": "4",
+    "nombre": "Paquetes de tallarines",
+    "cantidad": 6,
+    "unidad": "paquetes"
+  },
+  {
+    "id": "5",
+    "nombre": "Tarros de jurel",
+    "cantidad": 3,
+    "unidad": "tarros"
+  },
+  {
+    "id": "6",
     "nombre": "Aceite",
-    "cantidad": 50
+    "cantidad": 3,
+    "unidad": "litros"
+  },
+  {
+    "id": "7",
+    "nombre": "Jabón líquido",
+    "cantidad": 3,
+    "unidad": "litros"
+  },
+  {
+    "id": "8",
+    "nombre": "Colonias inglesas",
+    "cantidad": 3,
+    "unidad": "unidades"
+  },
+  {
+    "id": "9",
+    "nombre": "Desodorante en spray (hombre y mujer)",
+    "cantidad": 6,
+    "unidad": "unidades"
+  },
+  {
+    "id": "10",
+    "nombre": "Shampoo",
+    "cantidad": 3,
+    "unidad": "litros"
+  },
+  {
+    "id": "11",
+    "nombre": "Pañales de adulto talla XG",
+    "cantidad": 5,
+    "unidad": "paquetes"
   }
 ]
