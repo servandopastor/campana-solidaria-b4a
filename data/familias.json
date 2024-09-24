@@ -1,14 +1,38 @@
 [
-  {
-    "id": "1",
-    "nombre": "Familia Pérez"
-  },
-  {
-    "id": "2",
-    "nombre": "Familia González"
-  },
-  {
-    "id": "3",
-    "nombre": "Familia Rodríguez"
-  }
+  { "id": "1", "nombre": "Aguirre Rozas" },
+  { "id": "2", "nombre": "Alvarado Canales" },
+  { "id": "3", "nombre": "Araos Veloso" },
+  { "id": "4", "nombre": "Araya Guzmán" },
+  { "id": "5", "nombre": "Arriagada Menares" },
+  { "id": "6", "nombre": "Astudillo Vergara" },
+  { "id": "7", "nombre": "Basso Caamaño" },
+  { "id": "8", "nombre": "Bedoya Andrada" },
+  { "id": "9", "nombre": "Carcey Vergara" },
+  { "id": "10", "nombre": "Cisternas Aravena" },
+  { "id": "11", "nombre": "Córdova Rivera" },
+  { "id": "12", "nombre": "Duarte Noziglia" },
+  { "id": "13", "nombre": "Flores Callisto" },
+  { "id": "14", "nombre": "Fuentes Grimaldi" },
+  { "id": "15", "nombre": "Herrera Jara" },
+  { "id": "16", "nombre": "Lagos Ovando" },
+  { "id": "17", "nombre": "Leiva Pais" },
+  { "id": "18", "nombre": "Luengo Vivanco" },
+  { "id": "19", "nombre": "Martís Riquelme" },
+  { "id": "20", "nombre": "Molina Parra" },
+  { "id": "21", "nombre": "Núñez Zamora" },
+  { "id": "22", "nombre": "Pastor Ortega" },
+  { "id": "23", "nombre": "Pérez Araya" },
+  { "id": "24", "nombre": "Pino Cornejo" },
+  { "id": "25", "nombre": "Ramos Segovia" },
+  { "id": "26", "nombre": "Reyes Meneses" },
+  { "id": "27", "nombre": "Rissetto Apiolaza" },
+  { "id": "28", "nombre": "Saavedra Grez" },
+  { "id": "29", "nombre": "Salazar Andrada" },
+  { "id": "30", "nombre": "Salinas González" },
+  { "id": "31", "nombre": "Sánchez Díaz" },
+  { "id": "32", "nombre": "Torres Castro" },
+  { "id": "33", "nombre": "Valencia Castro" },
+  { "id": "34", "nombre": "Vega Valenzuela" },
+  { "id": "35", "nombre": "Vittone Gajardo" },
+  { "id": "36", "nombre": "Yaser Tejeda" }
 ]
