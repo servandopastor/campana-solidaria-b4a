@@ -57,35 +57,55 @@
     </div>
 
     <script>
+        let productos = [];
+        let familias = [];
+        let carro = [];
+        let bodega = [];
+
         // Función para cargar datos desde GitHub
-        async function loadData(file) {
-            const response = await fetch(`https://raw.githubusercontent.com/[TU-USUARIO]/[TU-REPO]/main/data/${file}.json`);
-            return await response.json();
+        async function loadData() {
+            try {
+                const [productosData, familiasData] = await Promise.all([
+                    fetch('data/productos.json').then(res => res.json()),
+                    fetch('data/familias.json').then(res => res.json())
+                ]);
+
+                productos = productosData;
+                familias = familiasData;
+
+                updateUI();
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
         }
 
         // Función para actualizar la interfaz
-        async function updateUI() {
-            const productos = await loadData('productos');
-            const familias = await loadData('familias');
-            const carro = await loadData('carro');
-            const bodega = await loadData('bodega');
+        function updateUI() {
+            updateAlmacen();
+            updateCarro();
+            updateBodegaSolidaria();
+            updateFamiliasPendientes();
+            updateResumen();
+        }
 
-            // Actualizar Almacén
+        function updateAlmacen() {
             const almacenEl = document.getElementById('almacen');
             almacenEl.innerHTML = productos.map(p => `
-                <div>${p.nombre}: ${p.cantidad} 
+                <div>${p.nombre}: ${p.cantidad} ${p.unidad}
                     <button onclick="addToCart('${p.id}')">+</button>
                     <button onclick="removeFromCart('${p.id}')">-</button>
                 </div>
             `).join('');
+        }
 
-            // Actualizar Carro
+        function updateCarro() {
             const carroEl = document.getElementById('carro');
             carroEl.innerHTML = carro.map(c => `
-                <div>${c.nombre}: ${c.cantidad}</div>
+                <div>${c.nombre}: ${c.cantidad} ${c.unidad}</div>
             `).join('');
+        }
 
-            // Actualizar Bodega Solidaria
+        function updateBodegaSolidaria() {
             const bodegaEl = document.querySelector('#bodegaSolidaria tbody');
             bodegaEl.innerHTML = bodega.map(b => `
                 <tr>
@@ -94,34 +114,32 @@
                     <td>${b.familia}</td>
                 </tr>
             `).join('');
+        }
 
-            // Actualizar Familias Pendientes
+        function updateFamiliasPendientes() {
             const familiasPendientesEl = document.getElementById('familiasPendientes');
             const familiasPendientes = familias.filter(f => !bodega.some(b => b.familia === f.nombre));
             familiasPendientesEl.innerHTML = familiasPendientes.map(f => `
                 <div>${f.nombre}</div>
             `).join('');
 
-            // Actualizar resumen
-            const totalProductos = productos.reduce((sum, p) => sum + p.cantidad, 0);
-            const productosComprometidos = bodega.reduce((sum, b) => sum + b.cantidad, 0);
-            const porcentajeProductos = (productosComprometidos / totalProductos * 100).toFixed(1);
-            document.getElementById('porcentajeProductos').textContent = `${porcentajeProductos}%`;
-
-            const porcentajeFamilias = ((familias.length - familiasPendientes.length) / familias.length * 100).toFixed(1);
-            document.getElementById('porcentajeFamilias').textContent = `${porcentajeFamilias}%`;
-
-            // Actualizar select de familias
             const selectFamilia = document.getElementById('selectFamilia');
             selectFamilia.innerHTML = '<option value="">Selecciona Familia</option>' + 
                 familiasPendientes.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
         }
 
+        function updateResumen() {
+            const totalProductos = productos.reduce((sum, p) => sum + p.cantidad, 0);
+            const productosComprometidos = bodega.reduce((sum, b) => sum + b.cantidad, 0);
+            const porcentajeProductos = (productosComprometidos / totalProductos * 100).toFixed(1);
+            document.getElementById('porcentajeProductos').textContent = `${porcentajeProductos}%`;
+
+            const porcentajeFamilias = ((familias.length - familias.filter(f => !bodega.some(b => b.familia === f.nombre)).length) / familias.length * 100).toFixed(1);
+            document.getElementById('porcentajeFamilias').textContent = `${porcentajeFamilias}%`;
+        }
+
         // Funciones para manipular el carro
-        async function addToCart(productId) {
-            const productos = await loadData('productos');
-            const carro = await loadData('carro');
-            
+        function addToCart(productId) {
             const producto = productos.find(p => p.id === productId);
             const itemEnCarro = carro.find(c => c.id === productId);
 
@@ -132,17 +150,11 @@
                     carro.push({...producto, cantidad: 1});
                 }
                 producto.cantidad--;
-                
-                await updateData('productos', productos);
-                await updateData('carro', carro);
                 updateUI();
             }
         }
 
-        async function removeFromCart(productId) {
-            const productos = await loadData('productos');
-            const carro = await loadData('carro');
-            
+        function removeFromCart(productId) {
             const itemEnCarro = carro.find(c => c.id === productId);
             const producto = productos.find(p => p.id === productId);
 
@@ -155,54 +167,23 @@
                     carro.splice(index, 1);
                 }
                 
-                await updateData('productos', productos);
-                await updateData('carro', carro);
                 updateUI();
             }
         }
 
         // Función para actualizar datos en GitHub (esto será implementado más adelante con GitHub Actions)
-      async function updateData(file, data) {
-    const response = await fetch(`https://api.github.com/repos/servandopastor/campana-solidaria-b4a/dispatches`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `token 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`,
-            'Accept': 'application/vnd.github.v3+json'
-        },
-        body: JSON.stringify({
-            event_type: 'update-data',
-            client_payload: {
-                file: file,
-                data: JSON.stringify(data)
-            }
-        })
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to update data');
-    }
-
-    // Esperar un momento para que GitHub Actions procese la actualización
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
-    // Recargar los datos
-    await updateUI();
-}
-
-        // Inicializar la página
-        updateUI();
+        async function updateData(file, data) {
+            console.log(`Actualizando ${file} con`, data);
+            // Aquí implementaremos la lógica para actualizar los archivos en GitHub
+        }
 
         // Event listener para confirmar cooperación
-        document.getElementById('confirmarCooperacion').addEventListener('click', async () => {
+        document.getElementById('confirmarCooperacion').addEventListener('click', () => {
             const familiaId = document.getElementById('selectFamilia').value;
             if (!familiaId) {
                 alert('Por favor, selecciona una familia');
                 return;
             }
-
-            const familias = await loadData('familias');
-            const carro = await loadData('carro');
-            const bodega = await loadData('bodega');
 
             const familia = familias.find(f => f.id === familiaId);
 
@@ -214,10 +195,12 @@
                 });
             });
 
-            await updateData('bodega', bodega);
-            await updateData('carro', []);  // Vaciar el carro
+            carro = [];  // Vaciar el carro
             updateUI();
         });
+
+        // Inicializar la página cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>
