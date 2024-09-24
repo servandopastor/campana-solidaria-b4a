@@ -162,10 +162,32 @@
         }
 
         // Función para actualizar datos en GitHub (esto será implementado más adelante con GitHub Actions)
-        async function updateData(file, data) {
-            console.log(`Actualizando ${file} con`, data);
-            // Aquí implementaremos la lógica para actualizar los archivos en GitHub
-        }
+      async function updateData(file, data) {
+    const response = await fetch(`https://api.github.com/repos/servandopastor/campana-solidaria-b4a/dispatches`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `token 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`,
+            'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify({
+            event_type: 'update-data',
+            client_payload: {
+                file: file,
+                data: JSON.stringify(data)
+            }
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to update data');
+    }
+
+    // Esperar un momento para que GitHub Actions procese la actualización
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
+    // Recargar los datos
+    await updateUI();
+}
 
         // Inicializar la página
         updateUI();
