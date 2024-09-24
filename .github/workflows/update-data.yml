@@ -1,0 +1,24 @@
+name: Update Data
+
+on:
+  repository_dispatch:
+    types: [update-data]
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Update JSON file
+      run: |
+        echo '${{ github.event.client_payload.data }}' > data/${{ github.event.client_payload.file }}.json
+    - name: Commit changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add data/${{ github.event.client_payload.file }}.json
+        git commit -m "Update ${{ github.event.client_payload.file }}.json"
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
