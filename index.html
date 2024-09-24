@@ -1,1 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaña Solidaria B4A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-3xl mx-auto space-y-8">
+        <h1 id="campaña-solidaria-b4a" class="text-2xl font-normal text-center mb-8">Campaña Solidaria B4A</h1>
 
+        <section>
+            <h2 id="resumen" class="text-xl mb-4">Resumen</h2>
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    Productos Comprometidos: <span id="porcentajeProductos">0.0%</span>
+                </div>
+                <div class="flex justify-between">
+                    Familias Comprometidas: <span id="porcentajeFamilias">0.0%</span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 id="almacén" class="text-xl mb-4">Almacén</h2>
+            <div id="almacen" class="space-y-2"></div>
+        </section>
+
+        <section>
+            <h2 id="carro" class="text-xl mb-4">Carro</h2>
+            <div id="carro" class="mb-6 space-y-2"></div>
+            <select id="selectFamilia" class="mb-4">
+                <option value="">Selecciona Familia</option>
+            </select>
+            <button id="confirmarCooperacion" class="bg-blue-500 text-white px-4 py-2 rounded">Confirmar Cooperación</button>
+        </section>
+
+        <section>
+            <h2 id="bodega-solidaria" class="text-xl mb-4">Bodega Solidaria</h2>
+            <table id="bodegaSolidaria" class="w-full">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Familia</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2 id="familias-pendientes" class="text-xl mb-4">Familias Pendientes</h2>
+            <div id="familiasPendientes" class="space-y-2"></div>
+        </section>
+    </div>
+
+    <script>
+        // Función para cargar datos desde GitHub
+        async function loadData(file) {
+            const response = await fetch(`https://raw.githubusercontent.com/[TU-USUARIO]/[TU-REPO]/main/data/${file}.json`);
+            return await response.json();
+        }
+
+        // Función para actualizar la interfaz
+        async function updateUI() {
+            const productos = await loadData('productos');
+            const familias = await loadData('familias');
+            const carro = await loadData('carro');
+            const bodega = await loadData('bodega');
+
+            // Actualizar Almacén
+            const almacenEl = document.getElementById('almacen');
+            almacenEl.innerHTML = productos.map(p => `
+                <div>${p.nombre}: ${p.cantidad} 
+                    <button onclick="addToCart('${p.id}')">+</button>
+                    <button onclick="removeFromCart('${p.id}')">-</button>
+                </div>
+            `).join('');
+
+            // Actualizar Carro
+            const carroEl = document.getElementById('carro');
+            carroEl.innerHTML = carro.map(c => `
+                <div>${c.nombre}: ${c.cantidad}</div>
+            `).join('');
+
+            // Actualizar Bodega Solidaria
+            const bodegaEl = document.querySelector('#bodegaSolidaria tbody');
+            bodegaEl.innerHTML = bodega.map(b => `
+                <tr>
+                    <td>${b.producto}</td>
+                    <td>${b.cantidad}</td>
+                    <td>${b.familia}</td>
+                </tr>
+            `).join('');
+
+            // Actualizar Familias Pendientes
+            const familiasPendientesEl = document.getElementById('familiasPendientes');
+            const familiasPendientes = familias.filter(f => !bodega.some(b => b.familia === f.nombre));
+            familiasPendientesEl.innerHTML = familiasPendientes.map(f => `
+                <div>${f.nombre}</div>
+            `).join('');
+
+            // Actualizar resumen
+            const totalProductos = productos.reduce((sum, p) => sum + p.cantidad, 0);
+            const productosComprometidos = bodega.reduce((sum, b) => sum + b.cantidad, 0);
+            const porcentajeProductos = (productosComprometidos / totalProductos * 100).toFixed(1);
+            document.getElementById('porcentajeProductos').textContent = `${porcentajeProductos}%`;
+
+            const porcentajeFamilias = ((familias.length - familiasPendientes.length) / familias.length * 100).toFixed(1);
+            document.getElementById('porcentajeFamilias').textContent = `${porcentajeFamilias}%`;
+
+            // Actualizar select de familias
+            const selectFamilia = document.getElementById('selectFamilia');
+            selectFamilia.innerHTML = '<option value="">Selecciona Familia</option>' + 
+                familiasPendientes.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
+        }
+
+        // Funciones para manipular el carro
+        async function addToCart(productId) {
+            const productos = await loadData('productos');
+            const carro = await loadData('carro');
+            
+            const producto = productos.find(p => p.id === productId);
+            const itemEnCarro = carro.find(c => c.id === productId);
+
+            if (producto && producto.cantidad > 0) {
+                if (itemEnCarro) {
+                    itemEnCarro.cantidad++;
+                } else {
+                    carro.push({...producto, cantidad: 1});
+                }
+                producto.cantidad--;
+                
+                await updateData('productos', productos);
+                await updateData('carro', carro);
+                updateUI();
+            }
+        }
+
+        async function removeFromCart(productId) {
+            const productos = await loadData('productos');
+            const carro = await loadData('carro');
+            
+            const itemEnCarro = carro.find(c => c.id === productId);
+            const producto = productos.find(p => p.id === productId);
+
+            if (itemEnCarro && itemEnCarro.cantidad > 0) {
+                itemEnCarro.cantidad--;
+                producto.cantidad++;
+                
+                if (itemEnCarro.cantidad === 0) {
+                    const index = carro.indexOf(itemEnCarro);
+                    carro.splice(index, 1);
+                }
+                
+                await updateData('productos', productos);
+                await updateData('carro', carro);
+                updateUI();
+            }
+        }
+
+        // Función para actualizar datos en GitHub (esto será implementado más adelante con GitHub Actions)
+        async function updateData(file, data) {
+            console.log(`Actualizando ${file} con`, data);
+            // Aquí implementaremos la lógica para actualizar los archivos en GitHub
+        }
+
+        // Inicializar la página
+        updateUI();
+
+        // Event listener para confirmar cooperación
+        document.getElementById('confirmarCooperacion').addEventListener('click', async () => {
+            const familiaId = document.getElementById('selectFamilia').value;
+            if (!familiaId) {
+                alert('Por favor, selecciona una familia');
+                return;
+            }
+
+            const familias = await loadData('familias');
+            const carro = await loadData('carro');
+            const bodega = await loadData('bodega');
+
+            const familia = familias.find(f => f.id === familiaId);
+
+            carro.forEach(item => {
+                bodega.push({
+                    producto: item.nombre,
+                    cantidad: item.cantidad,
+                    familia: familia.nombre
+                });
+            });
+
+            await updateData('bodega', bodega);
+            await updateData('carro', []);  // Vaciar el carro
+            updateUI();
+        });
+    </script>
+</body>
+</html>
