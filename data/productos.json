@@ -1,1 +1,17 @@
-
+[
+  {
+    "id": "1",
+    "nombre": "Arroz",
+    "cantidad": 100
+  },
+  {
+    "id": "2",
+    "nombre": "Frijoles",
+    "cantidad": 80
+  },
+  {
+    "id": "3",
+    "nombre": "Aceite",
+    "cantidad": 50
+  }
+]
