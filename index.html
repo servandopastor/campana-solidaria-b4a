@@ -251,7 +251,7 @@ function initPage() {
         const entradaAlmacen = document.getElementById('entrada-almacen');
         if (mensajeEspera) mensajeEspera.classList.toggle('hidden', !ocupado);
         if (entradaAlmacen) entradaAlmacen.classList.toggle('hidden', ocupado);
-    }, 5000); // Verificar cada 5 segundos
+    }, 2000); // Verificar cada 2 segundos
 }
 
 window.onload = initPage;
