@@ -71,7 +71,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz46fSJRGtFL2hZNrbn8da4WHUSberJLyF1AuLlUEmqhbCtImZSkMLq6qXeeaxEq-eDjg/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-isIp-X9wTXLuARCDpxHlHJ35P2KBDa_WvJbjgMrq7XJu0tpxKz4n-PXRL0rB3Wsfew/exec';
         
         async function fetchData(action, params = {}) {
             try {
@@ -100,7 +100,6 @@
                     <span>${producto[1]}</span>
                     <div>
                         <span>${producto[2]} ${producto[3]}</span>
-                        <button onclick="moverProducto('${producto[0]}', -1, 'almacenToCarro')" class="ml-2 px-2 py-1 bg-red-500 text-white rounded">-</button>
                         <button onclick="moverProducto('${producto[0]}', 1, 'almacenToCarro')" class="ml-1 px-2 py-1 bg-green-500 text-white rounded">+</button>
                     </div>
                 </div>
@@ -115,7 +114,7 @@
                 familias.slice(1).map(familia => `<option value="${familia[0]}">${familia[1]}</option>`).join('');
             
             const familiasPendientes = document.getElementById('familiasPendientes');
-            familiasPendientes.innerHTML = familias.slice(1).map(familia => `<div>${familia[1]}</div>`).join('');
+            familiasPendientes.innerHTML = familias.slice(1).map(familia => `<div data-id="${familia[0]}">${familia[1]}</div>`).join('');
         }
 
         async function updateCarro() {
@@ -128,7 +127,6 @@
                     <div>
                         <span>${item[2]} ${item[3]}</span>
                         <button onclick="moverProducto('${item[0]}', -1, 'carroToAlmacen')" class="ml-2 px-2 py-1 bg-red-500 text-white rounded">-</button>
-                        <button onclick="moverProducto('${item[0]}', 1, 'carroToAlmacen')" class="ml-1 px-2 py-1 bg-green-500 text-white rounded">+</button>
                     </div>
                 </div>
             `).join('');
@@ -160,6 +158,12 @@
                     await updateCarro();
                     await updateBodega();
                     await updateFamilias();
+                    await updatePorcentajes();
+                    // Eliminar la familia de la lista de pendientes
+                    const familiaElement = document.querySelector(`#familiasPendientes div[data-id="${familiaId}"]`);
+                    if (familiaElement) {
+                        familiaElement.remove();
+                    }
                     alert('Cooperación confirmada');
                 } else {
                     alert('Hubo un error al confirmar la cooperación: ' + (result.error || 'Error desconocido'));
@@ -176,6 +180,7 @@
                 if (result.success) {
                     await updateAlmacen();
                     await updateCarro();
+                    await updatePorcentajes();
                 } else {
                     alert('Hubo un error al mover el producto: ' + (result.error || 'Error desconocido'));
                 }
@@ -185,11 +190,20 @@
             }
         }
 
+        async function updatePorcentajes() {
+            const porcentajes = await fetchData('getPorcentajes');
+            if (porcentajes) {
+                document.getElementById('porcentajeProductos').textContent = porcentajes.productos.toFixed(1) + '%';
+                document.getElementById('porcentajeFamilias').textContent = porcentajes.familias.toFixed(1) + '%';
+            }
+        }
+
         async function initPage() {
             await updateAlmacen();
             await updateFamilias();
             await updateCarro();
             await updateBodega();
+            await updatePorcentajes();
 
             document.getElementById('confirmarCooperacion').addEventListener('click', confirmarCooperacion);
         }
