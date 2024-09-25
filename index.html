@@ -76,7 +76,7 @@
     </div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxolUawrDUy5Gfdbl1QkgOkWzfK9p9EeWTDHp3MEVteOIybgxzZVvADFdDw7fvvbdLX4w/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxicd2xzEcMWJxMA7aO8LW_kR8sktK125SrEVhO0dGt1x9CMLo1KE_aYa8QG21lscKidw/exec'; // Poner la URL del Google Apps Script aquí
 let familiaActual = null;
 
 async function fetchData(action, params = {}) {
@@ -165,7 +165,29 @@ async function updateEstadoAlmacen() {
     }
 }
 
-// ... (otras funciones como updateAlmacen, updateCarro, etc.) ...
+// Funciones para actualizar almacén y carro (completar con la lógica de obtener datos)
+
+async function updateAlmacen() {
+    const productos = await fetchData('getProductos');
+    const almacenDiv = document.getElementById('productos-almacen');
+    almacenDiv.innerHTML = '';
+    productos.datos.forEach(producto => {
+        const productoDiv = document.createElement('div');
+        productoDiv.textContent = `${producto[1]} (Stock: ${producto[2]})`;
+        almacenDiv.appendChild(productoDiv);
+    });
+}
+
+async function updateCarro() {
+    const carro = await fetchData('getCarro');
+    const carroDiv = document.getElementById('carro-items');
+    carroDiv.innerHTML = '';
+    carro.datos.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.textContent = `${item[1]} (Cantidad: ${item[2]})`;
+        carroDiv.appendChild(itemDiv);
+    });
+}
 
 function initPage() {
     const entrarAlmacenButton = document.getElementById('entrar-almacen');
