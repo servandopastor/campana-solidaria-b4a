@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -18,64 +19,76 @@
 <body class="bg-gray-100">
     <div class="max-w-3xl mx-auto space-y-6 p-4">
         <h1 id="campaña-solidaria-b4a" class="text-2xl font-bold text-center mb-6">Campaña Solidaria B4A</h1>
-        <div class="text-sm text-gray-600 mb-4 space-y-2">
-            <p>
-                <strong>Instrucciones generales:</strong> Este sistema permite gestionar donaciones para la campaña solidaria. 
-                Cargue los productos del almacén al carro, seleccione una familia y confirme la cooperación.
-            </p>
-            <p class="font-bold">
-                Tenga en cuenta que hay un tiempo de reacción de 10 segundos entre cada acción mientras se actualizan los datos.
-            </p>
+        
+        <!-- Sala de Espera -->
+        <div id="sala-espera">
+            <div class="section bg-white p-3 rounded shadow mb-4">
+                <h2 class="text-xl font-semibold mb-3">Resumen</h2>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="font-medium">Productos Comprometidos:</span>
+                        <span id="porcentaje-productos" class="font-bold">0.0%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium">Familias Comprometidas:</span>
+                        <span id="porcentaje-familias" class="font-bold">0.0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section bg-white p-3 rounded shadow mb-4">
+                <h2 class="text-xl font-semibold mb-3">Fila de Espera</h2>
+                <div id="mensaje-espera" class="hidden mb-3 text-red-600">
+                    El almacén está ocupado. Por favor, espere su turno.
+                </div>
+                <div id="entrada-almacen">
+                    <select id="select-familia" class="border p-2 rounded text-sm">
+                        <option value="">Selecciona tu Familia</option>
+                    </select>
+                    <button id="entrar-almacen" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Entrar al Almacén</button>
+                </div>
+            </div>
+
+            <div class="section bg-white p-3 rounded shadow">
+                <h2 id="familias-pendientes" class="text-xl font-semibold mb-3">Familias Pendientes</h2>
+                <div id="familias-pendientes-lista" class="space-y-1 text-sm"></div>
+            </div>
         </div>
 
-        <div id="fila-espera" class="section bg-white p-3 rounded shadow">
-            <h2 class="text-xl font-semibold mb-3">Fila de Espera</h2>
-            <div id="mensaje-espera" class="hidden mb-3 text-red-600">
-                El almacén está ocupado. Por favor, espere su turno.
+        <!-- Almacén -->
+        <div id="almacen" class="hidden">
+            <div class="section bg-white p-3 rounded shadow mb-4">
+                <h2 class="text-xl font-semibold mb-3">Almacén</h2>
+                <p id="familia-actual" class="mb-3 font-bold"></p>
+                <div id="productos-almacen" class="space-y-2"></div>
             </div>
-            <div id="entrada-almacen">
-                <select id="select-familia" class="border p-2 rounded text-sm">
-                    <option value="">Selecciona tu Familia</option>
-                </select>
-                <button id="entrar-almacen" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Entrar al Almacén</button>
-            </div>
-        </div>
 
-        <div id="almacen" class="section bg-white p-3 rounded shadow hidden">
-            <h2 class="text-xl font-semibold mb-3">Almacén</h2>
-            <p id="familia-actual" class="mb-3 font-bold"></p>
-            <div id="productos-almacen" class="space-y-2"></div>
-            <div id="carro" class="mt-4">
-                <h3 class="text-lg font-semibold mb-2">Carro</h3>
+            <div class="section bg-white p-3 rounded shadow mb-4">
+                <h2 class="text-xl font-semibold mb-3">Carro</h2>
                 <div id="carro-items" class="space-y-2"></div>
+                <button id="confirmar-cooperacion" class="mt-4 bg-green-500 text-white px-3 py-1 rounded text-sm">Confirmar Cooperación</button>
             </div>
-            <button id="confirmar-cooperacion" class="mt-4 bg-green-500 text-white px-3 py-1 rounded text-sm">Confirmar Cooperación</button>
-        </div>
 
-        <div class="section bg-white p-3 rounded shadow">
-            <h2 id="bodega-solidaria" class="text-xl font-semibold mb-3">Bodega Solidaria</h2>
-            <p class="text-sm text-gray-600 mb-2">
-                Aquí se muestran los productos donados y las familias que han cooperado.
-            </p>
-            <table class="w-full text-sm">
-                <thead>
-                    <tr>
-                        <th class="text-left">Producto</th>
-                        <th class="text-left">Cantidad</th>
-                        <th class="text-left">Familia</th>
-                    </tr>
-                </thead>
-                <tbody id="bodega-items"></tbody>
-            </table>
-        </div>
-
-        <div class="section bg-white p-3 rounded shadow">
-            <h2 id="familias-pendientes" class="text-xl font-semibold mb-3">Familias Pendientes</h2>
-            <div id="familias-pendientes-lista" class="space-y-1 text-sm"></div>
+            <div class="section bg-white p-3 rounded shadow">
+                <h2 id="bodega-solidaria" class="text-xl font-semibold mb-3">Bodega Solidaria</h2>
+                <p class="text-sm text-gray-600 mb-2">
+                    Aquí se muestran los productos donados y las familias que han cooperado.
+                </p>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr>
+                            <th class="text-left">Producto</th>
+                            <th class="text-left">Cantidad</th>
+                            <th class="text-left">Familia</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodega-items"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-<script>
+    <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHB03TUNEHgnEm0ppz3a88PgSEjY02C2bLwRSA7jPcoOG5Xx00HS89TJzSNO4OVrKAFQ/exec';
     let familiaActual = null;
 
@@ -92,7 +105,6 @@
             return await response.json();
         } catch (error) {
             console.error("Error fetching data:", error);
-            alert("Hubo un error al cargar los datos. Por favor, intenta de nuevo más tarde.");
             return null;
         }
     }
@@ -110,11 +122,12 @@
         const result = await fetchData('entrarAlAlmacen', { familiaId });
         if (result.success) {
             familiaActual = familiaId;
-            document.getElementById('fila-espera').classList.add('hidden');
+            document.getElementById('sala-espera').classList.add('hidden');
             document.getElementById('almacen').classList.remove('hidden');
             document.getElementById('familia-actual').textContent = `Familia actual: ${familiaId}`;
             await updateAlmacen();
             await updateCarro();
+            await updateBodega();
         } else {
             alert(result.error);
         }
@@ -125,7 +138,9 @@
         if (result.success) {
             familiaActual = null;
             document.getElementById('almacen').classList.add('hidden');
-            document.getElementById('fila-espera').classList.remove('hidden');
+            document.getElementById('sala-espera').classList.remove('hidden');
+            await updateResumen();
+            await updateFamiliasPendientes();
         }
     }
 
@@ -160,17 +175,12 @@
     }
 
     async function moverProducto(id, cantidad, direccion) {
-        try {
-            const result = await fetchData('moverProducto', { id, cantidad, direccion });
-            if (result.success) {
-                await updateAlmacen();
-                await updateCarro();
-            } else {
-                alert('Hubo un error al mover el producto: ' + (result.error || 'Error desconocido'));
-            }
-        } catch (error) {
-            console.error("Error moving product:", error);
-            alert("Hubo un error al mover el producto. Por favor, intenta de nuevo más tarde.");
+        const result = await fetchData('moverProducto', { id, cantidad, direccion });
+        if (result.success) {
+            await updateAlmacen();
+            await updateCarro();
+        } else {
+            alert('Hubo un error al mover el producto: ' + (result.error || 'Error desconocido'));
         }
     }
 
@@ -180,26 +190,21 @@
             return;
         }
 
-        try {
-            const result = await fetchData('confirmarCooperacion', { familiaId: familiaActual });
-            if (result.success) {
-                alert('Cooperación confirmada');
-                await salirDelAlmacen();
-                await updateAll();
-            } else {
-                alert('Hubo un error al confirmar la cooperación: ' + (result.error || 'Error desconocido'));
-            }
-        } catch (error) {
-            console.error("Error confirming cooperation:", error);
-            alert("Hubo un error al confirmar la cooperación. Por favor, intenta de nuevo más tarde.");
+        const result = await fetchData('confirmarCooperacion', { familiaId: familiaActual });
+        if (result.success) {
+            alert('Cooperación confirmada');
+            await salirDelAlmacen();
+        } else {
+            alert('Hubo un error al confirmar la cooperación: ' + (result.error || 'Error desconocido'));
         }
     }
 
-    async function updateAll() {
-        await updateAlmacen();
-        await updateCarro();
-        await updateBodega();
-        await updateFamiliasPendientes();
+    async function updateResumen() {
+        const porcentajes = await fetchData('getPorcentajes');
+        if (porcentajes) {
+            document.getElementById('porcentaje-productos').textContent = porcentajes.productos.toFixed(1) + '%';
+            document.getElementById('porcentaje-familias').textContent = porcentajes.familias.toFixed(1) + '%';
+        }
     }
 
     async function updateBodega() {
@@ -236,7 +241,9 @@
         document.getElementById('entrar-almacen').addEventListener('click', entrarAlAlmacen);
         document.getElementById('confirmar-cooperacion').addEventListener('click', confirmarCooperacion);
 
-        await updateAll();
+        await updateResumen();
+        await updateFamiliasPendientes();
+
         setInterval(async () => {
             const ocupado = await verificarAlmacenOcupado();
             document.getElementById('mensaje-espera').classList.toggle('hidden', !ocupado);
@@ -245,6 +252,6 @@
     }
 
     window.onload = initPage;
-</script>
+    </script>
 </body>
 </html>
