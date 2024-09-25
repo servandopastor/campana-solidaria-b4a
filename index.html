@@ -78,22 +78,12 @@
                 return null;
             }
         }
-        // ID de tu hoja de Google Sheets
-        const SHEET_ID = '1i0jSp0r1iH4qvBM3HcWJcfJlUI8WmSFmve3uWfKMepI';
-        
-        // Función para cargar datos de una pestaña específica
-        async function fetchSheetData(sheetName) {
-            const response = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}`);
-            const text = await response.text();
-            const data = JSON.parse(text.substr(47).slice(0, -2));
-            return data.table.rows.map(row => row.c.map(cell => cell ? cell.v : ''));
-        }
 
-        // Función para actualizar el almacén
         async function updateAlmacen() {
-            const productos = await fetchSheetData('Productos');
+            const productos = await fetchData('getProductos');
+            if (!productos) return;
             const almacen = document.getElementById('almacen');
-            almacen.innerHTML = productos.map(producto => `
+            almacen.innerHTML = productos.slice(1).map(producto => `
                 <div class="flex justify-between items-center">
                     <span>${producto[1]}</span>
                     <span>${producto[2]} ${producto[3]}</span>
@@ -101,22 +91,22 @@
             `).join('');
         }
 
-        // Función para actualizar las familias
         async function updateFamilias() {
-            const familias = await fetchSheetData('Familias');
+            const familias = await fetchData('getFamilias');
+            if (!familias) return;
             const selectFamilia = document.getElementById('selectFamilia');
             selectFamilia.innerHTML = '<option value="">Selecciona Familia</option>' + 
-                familias.map(familia => `<option value="${familia[0]}">${familia[1]}</option>`).join('');
+                familias.slice(1).map(familia => `<option value="${familia[0]}">${familia[1]}</option>`).join('');
             
             const familiasPendientes = document.getElementById('familiasPendientes');
-            familiasPendientes.innerHTML = familias.map(familia => `<div>${familia[1]}</div>`).join('');
+            familiasPendientes.innerHTML = familias.slice(1).map(familia => `<div>${familia[1]}</div>`).join('');
         }
 
-        // Función para actualizar el carro
         async function updateCarro() {
-            const carro = await fetchSheetData('Carro');
+            const carro = await fetchData('getCarro');
+            if (!carro) return;
             const carroItems = document.getElementById('carroItems');
-            carroItems.innerHTML = carro.map(item => `
+            carroItems.innerHTML = carro.slice(1).map(item => `
                 <div class="flex justify-between items-center">
                     <span>${item[1]}</span>
                     <span>${item[2]} ${item[3]}</span>
@@ -124,11 +114,11 @@
             `).join('');
         }
 
-        // Función para actualizar la bodega
         async function updateBodega() {
-            const bodega = await fetchSheetData('Bodega');
+            const bodega = await fetchData('getBodega');
+            if (!bodega) return;
             const bodegaItems = document.getElementById('bodegaItems');
-            bodegaItems.innerHTML = bodega.map(item => `
+            bodegaItems.innerHTML = bodega.slice(1).map(item => `
                 <tr>
                     <td>${item[0]}</td>
                     <td>${item[1]} ${item[2]}</td>
@@ -137,7 +127,6 @@
             `).join('');
         }
 
-        // Función para confirmar cooperación
         async function confirmarCooperacion() {
             const familiaId = document.getElementById('selectFamilia').value;
             if (!familiaId) {
@@ -166,7 +155,6 @@
             }
         }
 
-        // Inicializar la página
         async function initPage() {
             await updateAlmacen();
             await updateFamilias();
@@ -176,7 +164,6 @@
             document.getElementById('confirmarCooperacion').addEventListener('click', confirmarCooperacion);
         }
 
-        // Llamar a initPage cuando la página cargue
         window.onload = initPage;
     </script>
 </body>
