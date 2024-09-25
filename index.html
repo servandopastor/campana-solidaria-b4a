@@ -5,166 +5,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campaña Solidaria B4A</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Mejoras para móviles */
-        @media (max-width: 640px) {
-            .producto-item {
-                font-size: 0.875rem; /* Texto más pequeño en móviles */
-            }
-            .boton-cantidad {
-                padding: 0.25rem 0.5rem; /* Botones más pequeños */
-                font-size: 0.75rem; /* Texto más pequeño en botones */
-            }
-            .almacen-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 8px;
-            }
-            .almacen-item span {
-                flex-grow: 1;
-            }
-        }
-    </style>
 </head>
-<body class="bg-gray-100 p-8">
-    <div class="max-w-3xl mx-auto space-y-8">
+<body class="bg-gray-100">
+    <div class="max-w-3xl mx-auto space-y-8 p-4">
         <h1 id="campaña-solidaria-b4a" class="text-3xl font-bold text-center mb-8">Campaña Solidaria B4A</h1>
 
-        <!-- Resumen -->
-        <section class="bg-white p-4 rounded shadow">
+        <div class="section bg-white p-4 rounded shadow">
             <h2 id="resumen" class="text-2xl font-semibold mb-4">Resumen</h2>
             <div class="space-y-2">
                 <div class="flex justify-between">
-                    <span class="font-medium">Productos Comprometidos:</span> 
+                    <span class="font-medium">Productos Comprometidos:</span>
                     <span id="porcentajeProductos" class="font-bold">0.0%</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="font-medium">Familias Comprometidas:</span> 
+                    <span class="font-medium">Familias Comprometidas:</span>
                     <span id="porcentajeFamilias" class="font-bold">0.0%</span>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- Almacén -->
-        <section class="bg-white p-4 rounded shadow">
+        <div class="section bg-white p-4 rounded shadow">
             <h2 id="almacén" class="text-2xl font-semibold mb-4">Almacén</h2>
             <div id="almacen" class="space-y-2"></div>
-        </section>
+        </div>
 
-        <!-- Carro -->
-        <section class="bg-white p-4 rounded shadow">
+        <div class="section bg-white p-4 rounded shadow">
             <h2 id="carro" class="text-2xl font-semibold mb-4">Carro</h2>
             <div id="carroItems" class="mb-6 space-y-2"></div>
             <div class="flex items-center space-x-4">
-                <select id="selectFamilia" class="flex-grow p-2 border rounded">
+                <select id="selectFamilia" class="border p-2 rounded">
                     <option value="">Selecciona Familia</option>
                 </select>
-                <button id="confirmarCooperacion" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
-                    Confirmar Cooperación
-                </button>
+                <button id="confirmarCooperacion" class="bg-blue-500 text-white px-4 py-2 rounded">Confirmar Cooperación</button>
             </div>
-        </section>
+        </div>
 
-        <!-- Bodega Solidaria -->
-        <section class="bg-white p-4 rounded shadow">
+        <div class="section bg-white p-4 rounded shadow">
             <h2 id="bodega-solidaria" class="text-2xl font-semibold mb-4">Bodega Solidaria</h2>
-            <table id="bodegaSolidaria" class="w-full">
+            <table class="w-full">
                 <thead>
                     <tr>
-                        <th class="text-left">Producto</th>
-                        <th class="text-left">Cantidad</th>
-                        <th class="text-left">Familia</th>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Familia</th>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody id="bodegaItems"></tbody>
             </table>
-        </section>
+        </div>
 
-        <!-- Familias Pendientes -->
-        <section class="bg-white p-4 rounded shadow">
+        <div class="section bg-white p-4 rounded shadow">
             <h2 id="familias-pendientes" class="text-2xl font-semibold mb-4">Familias Pendientes</h2>
             <div id="familiasPendientes" class="space-y-2"></div>
-        </section>
-
+        </div>
     </div>
 
     <script>
-        let productos = [];
-        let familias = [];
-        let carro = [];
-        let bodega = [];
-        const GITHUB_TOKEN = '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';  // Asegúrate de usar un token de GitHub válido
-
-        // Función para cargar los archivos JSON y actualizar la interfaz
-        async function loadData() {
-            try {
-                const productosData = await fetch('data/productos.json', { cache: 'no-store' }).then(res => res.json());
-                const bodegaData = await fetch('data/bodega.json', { cache: 'no-store' }).then(res => res.json());
-                const familiasData = await fetch('data/familias.json', { cache: 'no-store' }).then(res => res.json());
-
-                productos = productosData;
-                bodega = bodegaData;
-                familias = familiasData;
-
-                updateUI();
-            } catch (error) {
-                console.error('Error al cargar los archivos JSON:', error);
-            }
+        // ID de tu hoja de Google Sheets
+        const SHEET_ID = '1i0jSp0r1iH4qvBM3HcWJcfJlUI8WmSFmve3uWfKMepI';
+        
+        // Función para cargar datos de una pestaña específica
+        async function fetchSheetData(sheetName) {
+            const response = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}`);
+            const text = await response.text();
+            const data = JSON.parse(text.substr(47).slice(0, -2));
+            return data.table.rows.map(row => row.c.map(cell => cell ? cell.v : ''));
         }
 
-        // Función para obtener el SHA de un archivo en GitHub
-        async function getFileSHA(filePath) {
-            const response = await fetch(`https://api.github.com/repos/servandopastor/campana-solidaria-b4a/contents/${filePath}`, {
-                method: 'GET',
-                headers: {
-                    Authorization: `token ${GITHUB_TOKEN}`,
-                    Accept: 'application/vnd.github.v3+json'
-                }
-            });
-
-            if (!response.ok) {
-                console.error('Error al obtener el SHA:', await response.json());
-                throw new Error('Error al obtener el SHA');
-            }
-
-            const data = await response.json();
-            return data.sha;
+        // Función para actualizar el almacén
+        async function updateAlmacen() {
+            const productos = await fetchSheetData('Productos');
+            const almacen = document.getElementById('almacen');
+            almacen.innerHTML = productos.map(producto => `
+                <div class="flex justify-between items-center">
+                    <span>${producto[1]}</span>
+                    <span>${producto[2]} ${producto[3]}</span>
+                </div>
+            `).join('');
         }
 
-        // Función para actualizar un archivo en GitHub
-        async function updateFileOnGitHub(filePath, content) {
-            try {
-                const sha = await getFileSHA(filePath);
-
-                const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
-
-                const response = await fetch(`https://api.github.com/repos/servandopastor/campana-solidaria-b4a/contents/${filePath}`, {
-                    method: 'PUT',
-                    headers: {
-                        Authorization: `token ${GITHUB_TOKEN}`,
-                        Accept: 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Actualización de ${filePath}`,
-                        content: updatedContent,
-                        sha: sha
-                    })
-                });
-
-                if (!response.ok) {
-                    console.error('Error al actualizar el archivo:', await response.json());
-                    throw new Error('Error al actualizar el archivo');
-                }
-
-                console.log(`${filePath} actualizado exitosamente`);
-            } catch (error) {
-                console.error('Error en updateFileOnGitHub:', error);
-            }
+        // Función para actualizar las familias
+        async function updateFamilias() {
+            const familias = await fetchSheetData('Familias');
+            const selectFamilia = document.getElementById('selectFamilia');
+            selectFamilia.innerHTML = '<option value="">Selecciona Familia</option>' + 
+                familias.map(familia => `<option value="${familia[0]}">${familia[1]}</option>`).join('');
+            
+            const familiasPendientes = document.getElementById('familiasPendientes');
+            familiasPendientes.innerHTML = familias.map(familia => `<div>${familia[1]}</div>`).join('');
         }
 
-        // Función para confirmar la cooperación y actualizar la bodega
+        // Función para actualizar el carro
+        async function updateCarro() {
+            const carro = await fetchSheetData('Carro');
+            const carroItems = document.getElementById('carroItems');
+            carroItems.innerHTML = carro.map(item => `
+                <div class="flex justify-between items-center">
+                    <span>${item[1]}</span>
+                    <span>${item[2]} ${item[3]}</span>
+                </div>
+            `).join('');
+        }
+
+        // Función para actualizar la bodega
+        async function updateBodega() {
+            const bodega = await fetchSheetData('Bodega');
+            const bodegaItems = document.getElementById('bodegaItems');
+            bodegaItems.innerHTML = bodega.map(item => `
+                <tr>
+                    <td>${item[0]}</td>
+                    <td>${item[1]} ${item[2]}</td>
+                    <td>${item[3]}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Función para confirmar cooperación
         async function confirmarCooperacion() {
             const familiaId = document.getElementById('selectFamilia').value;
             if (!familiaId) {
@@ -172,140 +128,27 @@
                 return;
             }
 
-            const familia = familias.find(f => f.id === familiaId);
+            // Aquí deberías implementar la lógica para mover los items del carro a la bodega
+            // y actualizar la hoja de Google Sheets. Por ahora, solo actualizaremos la interfaz.
 
-            carro.forEach(item => {
-                bodega.push({
-                    producto: item.nombre,
-                    cantidad: item.cantidad,
-                    familia: familia.nombre
-                });
-            });
-
-            // Vaciar el carro después de confirmar la cooperación
-            carro = [];
-
-            // Actualizar bodega.json en GitHub
-            await updateFileOnGitHub('data/bodega.json', bodega);
-
-            // Actualizar la interfaz
-            updateUI();
-            alert("Cooperación confirmada y guardada correctamente.");
+            await updateCarro();
+            await updateBodega();
+            await updateFamilias();
+            alert('Cooperación confirmada');
         }
 
-        // Actualizar el almacén
-        function updateAlmacen() {
-            const almacenEl = document.getElementById('almacen');
-            almacenEl.innerHTML = productos.map(p => `
-                <div class="almacen-item">
-                    <span>${p.nombre}: ${p.cantidad} ${p.unidad}</span>
-                    <div>
-                        <button onclick="addToCart('${p.id}')" class="boton-cantidad bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded mr-2">+</button>
-                        <button onclick="removeFromCart('${p.id}')" class="boton-cantidad bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">-</button>
-                    </div>
-                </div>
-            `).join('');
+        // Inicializar la página
+        async function initPage() {
+            await updateAlmacen();
+            await updateFamilias();
+            await updateCarro();
+            await updateBodega();
+
+            document.getElementById('confirmarCooperacion').addEventListener('click', confirmarCooperacion);
         }
 
-        // Actualizar el carro
-        function updateCarro() {
-            const carroEl = document.getElementById('carroItems');
-            carroEl.innerHTML = carro.length ? carro.map(c => `
-                <div class="almacen-item">
-                    <span>${c.nombre}: ${c.cantidad} ${c.unidad}</span>
-                    <div>
-                        <button onclick="addToCart('${c.id}')" class="boton-cantidad bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded mr-2">+</button>
-                        <button onclick="removeFromCart('${c.id}')" class="boton-cantidad bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">-</button>
-                    </div>
-                </div>
-            `).join('') : '<p>El carro está vacío</p>';
-        }
-
-        // Función para agregar al carro
-        function addToCart(productId) {
-            const producto = productos.find(p => p.id === productId);
-            const itemEnCarro = carro.find(c => c.id === productId);
-
-            if (producto && producto.cantidad > 0) {
-                if (itemEnCarro) {
-                    itemEnCarro.cantidad++;
-                } else {
-                    carro.push({...producto, cantidad: 1});
-                }
-                producto.cantidad--;
-                updateUI();
-            }
-        }
-
-        // Función para remover del carro
-        function removeFromCart(productId) {
-            const itemEnCarro = carro.find(c => c.id === productId);
-            const producto = productos.find(p => p.id === productId);
-
-            if (itemEnCarro && itemEnCarro.cantidad > 0) {
-                itemEnCarro.cantidad--;
-                producto.cantidad++;
-                
-                if (itemEnCarro.cantidad === 0) {
-                    const index = carro.indexOf(itemEnCarro);
-                    carro.splice(index, 1);
-                }
-                
-                updateUI();
-            }
-        }
-
-        // Actualizar la Bodega Solidaria
-        function updateBodegaSolidaria() {
-            const bodegaEl = document.querySelector('#bodegaSolidaria tbody');
-            bodegaEl.innerHTML = bodega.map(b => `
-                <tr>
-                    <td>${b.producto}</td>
-                    <td>${b.cantidad}</td>
-                    <td>${b.familia}</td>
-                </tr>
-            `).join('');
-        }
-
-        // Actualizar familias pendientes
-        function updateFamiliasPendientes() {
-            const familiasPendientesEl = document.getElementById('familiasPendientes');
-            const familiasPendientes = familias.filter(f => !bodega.some(b => b.familia === f.nombre));
-
-            familiasPendientesEl.innerHTML = familiasPendientes.map(f => `
-                <div>${f.nombre}</div>
-            `).join('');
-
-            const selectFamilia = document.getElementById('selectFamilia');
-            selectFamilia.innerHTML = '<option value="">Selecciona Familia</option>' + 
-                familiasPendientes.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
-        }
-
-        // Actualizar el resumen
-        function updateResumen() {
-            const totalProductos = productos.reduce((sum, p) => sum + p.cantidad, 0);
-            const productosComprometidos = bodega.reduce((sum, b) => sum + b.cantidad, 0);
-            const porcentajeProductos = (productosComprometidos / totalProductos * 100).toFixed(1);
-            document.getElementById('porcentajeProductos').textContent = `${porcentajeProductos}%`;
-
-            const porcentajeFamilias = ((familias.length - familias.filter(f => !bodega.some(b => b.familia === f.nombre)).length) / familias.length * 100).toFixed(1);
-            document.getElementById('porcentajeFamilias').textContent = `${porcentajeFamilias}%`;
-        }
-
-        // Función para actualizar la interfaz con los datos cargados
-        function updateUI() {
-            updateAlmacen();
-            updateCarro();
-            updateBodegaSolidaria();
-            updateFamiliasPendientes();
-            updateResumen();
-        }
-
-        // Cargar datos al iniciar la página
-        document.addEventListener('DOMContentLoaded', loadData);
-
-        // Asociar el botón confirmar cooperación con su acción
-        document.getElementById('confirmarCooperacion').addEventListener('click', confirmarCooperacion);
+        // Llamar a initPage cuando la página cargue
+        window.onload = initPage;
     </script>
 </body>
 </html>
