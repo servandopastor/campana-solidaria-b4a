@@ -211,20 +211,66 @@
             updateResumen();
         }
 
-        // Actualizar el almacén
+        // Actualizar el almacén (con botones + y -)
         function updateAlmacen() {
             const almacenEl = document.getElementById('almacen');
             almacenEl.innerHTML = productos.map(p => `
                 <div class="flex justify-between items-center">
                     <span>${p.nombre}: ${p.cantidad} ${p.unidad}</span>
+                    <div>
+                        <button onclick="addToCart('${p.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded mr-2">+</button>
+                        <button onclick="removeFromCart('${p.id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">-</button>
+                    </div>
                 </div>
             `).join('');
         }
 
-        // Actualizar el carro (vacío en esta implementación)
+        // Actualizar el carro
         function updateCarro() {
             const carroEl = document.getElementById('carroItems');
-            carroEl.innerHTML = '<p>El carro está vacío</p>';
+            carroEl.innerHTML = carro.length ? carro.map(c => `
+                <div class="flex justify-between items-center">
+                    <span>${c.nombre}: ${c.cantidad} ${c.unidad}</span>
+                    <div>
+                        <button onclick="addToCart('${c.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded mr-2">+</button>
+                        <button onclick="removeFromCart('${c.id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">-</button>
+                    </div>
+                </div>
+            `).join('') : '<p>El carro está vacío</p>';
+        }
+
+        // Función para agregar al carro
+        function addToCart(productId) {
+            const producto = productos.find(p => p.id === productId);
+            const itemEnCarro = carro.find(c => c.id === productId);
+
+            if (producto && producto.cantidad > 0) {
+                if (itemEnCarro) {
+                    itemEnCarro.cantidad++;
+                } else {
+                    carro.push({...producto, cantidad: 1});
+                }
+                producto.cantidad--;
+                updateUI();
+            }
+        }
+
+        // Función para remover del carro
+        function removeFromCart(productId) {
+            const itemEnCarro = carro.find(c => c.id === productId);
+            const producto = productos.find(p => p.id === productId);
+
+            if (itemEnCarro && itemEnCarro.cantidad > 0) {
+                itemEnCarro.cantidad--;
+                producto.cantidad++;
+                
+                if (itemEnCarro.cantidad === 0) {
+                    const index = carro.indexOf(itemEnCarro);
+                    carro.splice(index, 1);
+                }
+                
+                updateUI();
+            }
         }
 
         // Actualizar la Bodega Solidaria
