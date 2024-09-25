@@ -61,6 +61,23 @@
     </div>
 
     <script>
+        // URL de tu Web App de Google Apps Script
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwNWZKr3YG7QCzub93cG5y8xnKokRejE_Zu9YkDHMEkqf6Zptobhx-glZktJhUqvGiFfQ/exec';
+        
+        async function fetchData(action) {
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=${action}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                alert("Hubo un error al cargar los datos. Por favor, intenta de nuevo más tarde.");
+                return null;
+            }
+        }
         // ID de tu hoja de Google Sheets
         const SHEET_ID = '1i0jSp0r1iH4qvBM3HcWJcfJlUI8WmSFmve3uWfKMepI';
         
@@ -128,13 +145,25 @@
                 return;
             }
 
-            // Aquí deberías implementar la lógica para mover los items del carro a la bodega
-            // y actualizar la hoja de Google Sheets. Por ahora, solo actualizaremos la interfaz.
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=confirmarCooperacion&familiaId=${familiaId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const result = await response.json();
 
-            await updateCarro();
-            await updateBodega();
-            await updateFamilias();
-            alert('Cooperación confirmada');
+                if (result.success) {
+                    await updateCarro();
+                    await updateBodega();
+                    await updateFamilias();
+                    alert('Cooperación confirmada');
+                } else {
+                    alert('Hubo un error al confirmar la cooperación: ' + (result.error || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error("Error confirming cooperation:", error);
+                alert("Hubo un error al confirmar la cooperación. Por favor, intenta de nuevo más tarde.");
+            }
         }
 
         // Inicializar la página
