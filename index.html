@@ -68,6 +68,7 @@
         let carro = [];
         let bodega = [];
 
+        // Función para cargar los datos desde los archivos JSON
         async function loadData() {
             try {
                 const [productosData, familiasData] = await Promise.all([
@@ -75,60 +76,46 @@
                     fetch('data/familias.json').then(res => res.json())
                 ]);
 
+                console.log("Productos data:", productosData);  // Verificar datos de productos
+                console.log("Familias data:", familiasData);    // Verificar datos de familias
+
                 productos = productosData;
                 familias = familiasData;
 
-                updateUI();
+                updateUI();  // Actualizar la interfaz después de cargar los datos
             } catch (error) {
                 console.error('Error loading data:', error);
             }
         }
 
+        // Función para obtener el SHA de un archivo en GitHub
         async function getFileSHA(filePath) {
             const response = await fetch(`https://api.github.com/repos/servandopastor/campana-solidaria-b4a/contents/${filePath}`, {
                 method: 'GET',
                 headers: {
-                    Authorization: `token ${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}`, // Aquí debes poner tu token de GitHub
+                    Authorization: `token ${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}`, // Reemplaza con tu token
                     Accept: 'application/vnd.github.v3+json'
                 }
             });
 
             const data = await response.json();
-            return data.sha; // Este es el SHA necesario para actualizar el archivo
+            return data.sha; // Retorna el SHA necesario para actualizar el archivo
         }
 
-        async function updateFilesOnGitHub(files) {
-            for (let file of files) {
-                const sha = await getFileSHA(file.filePath); // Obtener SHA del archivo
-
-                // Convertir el contenido del archivo a base64
-                const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(file.content, null, 2))));
-
-                const response = await fetch(`https://api.github.com/repos/[tu_usuario]/[tu_repositorio]/contents/${file.filePath}`, {
-                    method: 'PUT',
-                    headers: {
-                        Authorization: `token ${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}`, // Aquí debes poner tu token de GitHub
-                        Accept: 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Actualización de ${file.filePath} después de confirmar cooperación`,
-                        content: updatedContent,
-                        sha: sha,
-                        branch: "main"  // Actualiza la rama "main"
-                    })
-                });
-
-                if (response.ok) {
-                    console.log(`${file.filePath} actualizado exitosamente`);
-                } else {
-                    console.error(`Error al actualizar ${file.filePath}:`, await response.json());
-                }
-            }
+        // Actualizar toda la interfaz de usuario
+        function updateUI() {
+            updateAlmacen();
+            updateCarro();
+            updateBodegaSolidaria();
+            updateFamiliasPendientes();
+            updateResumen();
         }
 
+        // Actualizar el almacén
         function updateAlmacen() {
             const almacenEl = document.getElementById('almacen');
+            console.log("Productos cargados:", productos);  // Verificar si los productos están bien cargados
+
             almacenEl.innerHTML = productos.map(p => `
                 <div class="flex justify-between items-center">
                     <span>${p.nombre}: ${p.cantidad} ${p.unidad}</span>
@@ -140,8 +127,11 @@
             `).join('');
         }
 
+        // Actualizar el carro
         function updateCarro() {
             const carroEl = document.getElementById('carroItems');
+            console.log("Carro actual:", carro);  // Verificar contenido del carro
+
             carroEl.innerHTML = carro.length ? carro.map(c => `
                 <div class="flex justify-between items-center">
                     <span>${c.nombre}: ${c.cantidad} ${c.unidad}</span>
@@ -153,8 +143,11 @@
             `).join('') : '<p>El carro está vacío</p>';
         }
 
+        // Actualizar la Bodega Solidaria
         function updateBodegaSolidaria() {
             const bodegaEl = document.querySelector('#bodegaSolidaria tbody');
+            console.log("Bodega actual:", bodega);  // Verificar la bodega
+
             bodegaEl.innerHTML = bodega.map(b => `
                 <tr>
                     <td>${b.producto}</td>
@@ -164,9 +157,12 @@
             `).join('');
         }
 
+        // Actualizar familias pendientes
         function updateFamiliasPendientes() {
             const familiasPendientesEl = document.getElementById('familiasPendientes');
             const familiasPendientes = familias.filter(f => !bodega.some(b => b.familia === f.nombre));
+            console.log("Familias pendientes:", familiasPendientes);  // Verificar familias pendientes
+
             familiasPendientesEl.innerHTML = familiasPendientes.map(f => `
                 <div>${f.nombre}</div>
             `).join('');
@@ -176,6 +172,7 @@
                 familiasPendientes.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
         }
 
+        // Actualizar resumen de productos y familias
         function updateResumen() {
             const totalProductos = productos.reduce((sum, p) => sum + p.cantidad, 0);
             const productosComprometidos = bodega.reduce((sum, b) => sum + b.cantidad, 0);
@@ -186,6 +183,7 @@
             document.getElementById('porcentajeFamilias').textContent = `${porcentajeFamilias}%`;
         }
 
+        // Agregar al carro
         function addToCart(productId) {
             const producto = productos.find(p => p.id === productId);
             const itemEnCarro = carro.find(c => c.id === productId);
@@ -201,6 +199,7 @@
             }
         }
 
+        // Eliminar del carro
         function removeFromCart(productId) {
             const itemEnCarro = carro.find(c => c.id === productId);
             const producto = productos.find(p => p.id === productId);
@@ -218,6 +217,7 @@
             }
         }
 
+        // Confirmar la cooperación y actualizar archivos
         document.getElementById('confirmarCooperacion').addEventListener('click', async () => {
             const familiaId = document.getElementById('selectFamilia').value;
             if (!familiaId) {
@@ -237,24 +237,9 @@
 
             carro = [];  // Vaciar el carro
             updateUI();  // Actualizar la interfaz
-
-            // Preparar los archivos a actualizar
-            const filesToUpdate = [
-                {
-                    filePath: 'data/bodega.json',
-                    content: bodega
-                },
-                {
-                    filePath: 'data/productos.json',
-                    content: productos  // Actualizar los productos restantes
-                }
-            ];
-
-            // Llamar a la función para actualizar los archivos en GitHub
-            await updateFilesOnGitHub(filesToUpdate);
         });
 
-        document.addEventListener('DOMContentLoaded', loadData);
+        document.addEventListener('DOMContentLoaded', loadData);  // Cargar datos cuando el DOM esté listo
     </script>
 </body>
 </html>
