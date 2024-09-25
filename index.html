@@ -73,7 +73,7 @@
         let familias = [];
         let carro = [];
         let bodega = [];
-        const GITHUB_TOKEN = 'tu_token_github_aqui';  // Token de GitHub (asegúrate de reemplazarlo con el correcto)
+        const GITHUB_TOKEN = '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';  // Token de GitHub (asegúrate de reemplazarlo con el correcto)
 
         // Función para cargar los archivos JSON y actualizar la interfaz
         async function loadData() {
@@ -102,34 +102,44 @@
                 }
             });
 
+            if (!response.ok) {
+                console.error('Error al obtener el SHA:', await response.json());
+                throw new Error('Error al obtener el SHA');
+            }
+
             const data = await response.json();
             return data.sha;
         }
 
         // Función para actualizar un archivo en GitHub
         async function updateFileOnGitHub(filePath, content) {
-            const sha = await getFileSHA(filePath);
+            try {
+                const sha = await getFileSHA(filePath);
 
-            const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
+                const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
 
-            const response = await fetch(`https://api.github.com/repos/servandopastor/campana-solidaria-b4a/contents/${filePath}`, {
-                method: 'PUT',
-                headers: {
-                    Authorization: `token ${GITHUB_TOKEN}`,
-                    Accept: 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: `Actualización de ${filePath}`,
-                    content: updatedContent,
-                    sha: sha
-                })
-            });
+                const response = await fetch(`https://api.github.com/repos/servandopastor/campana-solidaria-b4a/contents/${filePath}`, {
+                    method: 'PUT',
+                    headers: {
+                        Authorization: `token ${GITHUB_TOKEN}`,
+                        Accept: 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Actualización de ${filePath}`,
+                        content: updatedContent,
+                        sha: sha
+                    })
+                });
 
-            if (response.ok) {
+                if (!response.ok) {
+                    console.error('Error al actualizar el archivo:', await response.json());
+                    throw new Error('Error al actualizar el archivo');
+                }
+
                 console.log(`${filePath} actualizado exitosamente`);
-            } else {
-                console.error('Error al actualizar el archivo:', await response.json());
+            } catch (error) {
+                console.error('Error en updateFileOnGitHub:', error);
             }
         }
 
