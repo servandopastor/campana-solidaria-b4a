@@ -66,39 +66,6 @@
             <div id="familiasPendientes" class="space-y-2"></div>
         </section>
 
-        <!-- Edición manual de registros -->
-        <section class="bg-white p-4 rounded shadow">
-            <h2 id="editar-registro" class="text-2xl font-semibold mb-4">Editar Registro Manualmente</h2>
-
-            <div class="space-y-4">
-                <div class="flex flex-col">
-                    <label for="archivo" class="font-medium">Archivo a editar</label>
-                    <select id="archivo" class="p-2 border rounded">
-                        <option value="data/bodega.json">Bodega (bodega.json)</option>
-                        <option value="data/productos.json">Productos (productos.json)</option>
-                    </select>
-                </div>
-
-                <div class="flex flex-col">
-                    <label for="registroId" class="font-medium">ID del Registro</label>
-                    <input id="registroId" type="text" class="p-2 border rounded" placeholder="Ej. ID del producto o registro">
-                </div>
-
-                <div class="flex flex-col">
-                    <label for="campo" class="font-medium">Campo a modificar</label>
-                    <input id="campo" type="text" class="p-2 border rounded" placeholder="Ej. nombre, cantidad, familia">
-                </div>
-
-                <div class="flex flex-col">
-                    <label for="nuevoValor" class="font-medium">Nuevo valor</label>
-                    <input id="nuevoValor" type="text" class="p-2 border rounded" placeholder="Ej. Nuevo valor del campo">
-                </div>
-
-                <button id="guardarCambios" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                    Guardar Cambios
-                </button>
-            </div>
-        </section>
     </div>
 
     <script>
@@ -106,7 +73,6 @@
         let familias = [];
         let carro = [];
         let bodega = [];
-        const password = "servandopastor";  // Contraseña requerida
         const GITHUB_TOKEN = 'tu_token_github_aqui';  // Token de GitHub (asegúrate de reemplazarlo con el correcto)
 
         // Función para cargar los archivos JSON y actualizar la interfaz
@@ -115,10 +81,6 @@
                 const productosData = await fetch('data/productos.json', { cache: 'no-store' }).then(res => res.json());
                 const bodegaData = await fetch('data/bodega.json', { cache: 'no-store' }).then(res => res.json());
                 const familiasData = await fetch('data/familias.json', { cache: 'no-store' }).then(res => res.json());
-
-                console.log("Productos cargados:", productosData);
-                console.log("Bodega cargada:", bodegaData);
-                console.log("Familias cargadas:", familiasData);
 
                 productos = productosData;
                 bodega = bodegaData;
@@ -171,47 +133,36 @@
             }
         }
 
-        // Solicitar contraseña antes de permitir cambios
-        async function solicitarContraseñaYGuardar() {
-            const inputPassword = prompt("Por favor, ingresa la contraseña de administrador:");
-            if (inputPassword === password) {
-                const archivo = document.getElementById('archivo').value;
-                const registroId = document.getElementById('registroId').value;
-                const campo = document.getElementById('campo').value;
-                const nuevoValor = document.getElementById('nuevoValor').value;
-
-                let contenido = (archivo.includes('bodega')) ? bodega : productos;
-
-                let registro = contenido.find(item => item.id === registroId);
-
-                if (registro) {
-                    registro[campo] = nuevoValor;
-
-                    await updateFileOnGitHub(archivo, contenido);
-
-                    alert('Registro actualizado exitosamente.');
-                    updateUI();
-                } else {
-                    alert('Registro no encontrado.');
-                }
-            } else {
-                alert("Contraseña incorrecta. No se han realizado cambios.");
+        // Función para confirmar la cooperación y actualizar la bodega
+        async function confirmarCooperacion() {
+            const familiaId = document.getElementById('selectFamilia').value;
+            if (!familiaId) {
+                alert('Por favor, selecciona una familia');
+                return;
             }
+
+            const familia = familias.find(f => f.id === familiaId);
+
+            carro.forEach(item => {
+                bodega.push({
+                    producto: item.nombre,
+                    cantidad: item.cantidad,
+                    familia: familia.nombre
+                });
+            });
+
+            // Vaciar el carro después de confirmar la cooperación
+            carro = [];
+
+            // Actualizar bodega.json en GitHub
+            await updateFileOnGitHub('data/bodega.json', bodega);
+
+            // Actualizar la interfaz
+            updateUI();
+            alert("Cooperación confirmada y guardada correctamente.");
         }
 
-        // Evento para guardar cambios con contraseña
-        document.getElementById('guardarCambios').addEventListener('click', solicitarContraseñaYGuardar);
-
-        // Función para actualizar la interfaz con los datos cargados
-        function updateUI() {
-            updateAlmacen();
-            updateCarro();
-            updateBodegaSolidaria();
-            updateFamiliasPendientes();
-            updateResumen();
-        }
-
-        // Actualizar el almacén (con botones + y -)
+        // Actualizar el almacén
         function updateAlmacen() {
             const almacenEl = document.getElementById('almacen');
             almacenEl.innerHTML = productos.map(p => `
@@ -310,8 +261,20 @@
             document.getElementById('porcentajeFamilias').textContent = `${porcentajeFamilias}%`;
         }
 
+        // Función para actualizar la interfaz con los datos cargados
+        function updateUI() {
+            updateAlmacen();
+            updateCarro();
+            updateBodegaSolidaria();
+            updateFamiliasPendientes();
+            updateResumen();
+        }
+
         // Cargar datos al iniciar la página
         document.addEventListener('DOMContentLoaded', loadData);
+
+        // Asociar el botón confirmar cooperación con su acción
+        document.getElementById('confirmarCooperacion').addEventListener('click', confirmarCooperacion);
     </script>
 </body>
 </html>
