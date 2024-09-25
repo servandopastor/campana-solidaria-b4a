@@ -113,25 +113,34 @@
         return await fetchData('verificarAlmacenOcupado');
     }
 
-    async function entrarAlAlmacen() {
-        const familiaId = document.getElementById('select-familia').value;
-        if (!familiaId) {
-            alert('Por favor, selecciona una familia');
-            return;
-        }
-        const result = await fetchData('entrarAlAlmacen', { familiaId });
-        if (result.success) {
-            familiaActual = familiaId;
-            document.getElementById('sala-espera').classList.add('hidden');
-            document.getElementById('almacen').classList.remove('hidden');
-            document.getElementById('familia-actual').textContent = `Familia actual: ${familiaId}`;
-            await updateAlmacen();
-            await updateCarro();
-            await updateBodega();
-        } else {
-            alert(result.error);
-        }
+async function entrarAlAlmacen() {
+    const familiaId = document.getElementById('select-familia').value;
+    if (!familiaId) {
+        alert('Por favor, selecciona una familia');
+        return;
     }
+    console.log('Intentando entrar al almacén con familia:', familiaId);
+    const result = await fetchData('entrarAlAlmacen', { familiaId });
+    console.log('Resultado de entrarAlAlmacen:', result);
+    if (result && result.success) {
+        familiaActual = familiaId;
+        const salaEspera = document.getElementById('sala-espera');
+        const almacen = document.getElementById('almacen');
+        const familiaActualElement = document.getElementById('familia-actual');
+        
+        if (salaEspera) salaEspera.classList.add('hidden');
+        if (almacen) almacen.classList.remove('hidden');
+        if (familiaActualElement) familiaActualElement.textContent = `Familia actual: ${familiaId}`;
+        
+        console.log('Cambiando a vista de almacén');
+        await updateAlmacen();
+        await updateCarro();
+        await updateBodega();
+    } else {
+        console.error('Error al entrar al almacén:', result ? result.error : 'Respuesta vacía');
+        alert('Hubo un error al entrar al almacén. Por favor, intenta de nuevo.');
+    }
+}
 
     async function salirDelAlmacen() {
         const result = await fetchData('salirDelAlmacen');
@@ -230,28 +239,41 @@
             .join('');
     }
 
-    async function initPage() {
-        const selectFamilia = document.getElementById('select-familia');
-        const familias = await fetchData('getFamilias');
-        if (familias) {
-            selectFamilia.innerHTML = '<option value="">Selecciona tu Familia</option>' + 
-                familias.slice(1).map(familia => `<option value="${familia[0]}">${familia[1]}</option>`).join('');
-        }
+function initPage() {
+    console.log('Inicializando página');
+    const selectFamilia = document.getElementById('select-familia');
+    const entrarAlmacenButton = document.getElementById('entrar-almacen');
+    const confirmarCooperacionButton = document.getElementById('confirmar-cooperacion');
 
-        document.getElementById('entrar-almacen').addEventListener('click', entrarAlAlmacen);
-        document.getElementById('confirmar-cooperacion').addEventListener('click', confirmarCooperacion);
-
-        await updateResumen();
-        await updateFamiliasPendientes();
-
-        setInterval(async () => {
-            const ocupado = await verificarAlmacenOcupado();
-            document.getElementById('mensaje-espera').classList.toggle('hidden', !ocupado);
-            document.getElementById('entrada-almacen').classList.toggle('hidden', ocupado);
-        }, 5000); // Verificar cada 5 segundos
+    if (selectFamilia) {
+        fetchData('getFamilias').then(familias => {
+            if (familias) {
+                selectFamilia.innerHTML = '<option value="">Selecciona tu Familia</option>' + 
+                    familias.slice(1).map(familia => `<option value="${familia[0]}">${familia[1]}</option>`).join('');
+            }
+        });
     }
 
-    window.onload = initPage;
+    if (entrarAlmacenButton) {
+        entrarAlmacenButton.addEventListener('click', entrarAlAlmacen);
+    }
+
+    if (confirmarCooperacionButton) {
+        confirmarCooperacionButton.addEventListener('click', confirmarCooperacion);
+    }
+
+    updateResumen();
+    updateFamiliasPendientes();
+
+    setInterval(async () => {
+        const ocupado = await verificarAlmacenOcupado();
+        const mensajeEspera = document.getElementById('mensaje-espera');
+        const entradaAlmacen = document.getElementById('entrada-almacen');
+        if (mensajeEspera) mensajeEspera.classList.toggle('hidden', !ocupado);
+        if (entradaAlmacen) entradaAlmacen.classList.toggle('hidden', ocupado);
+    }, 2000); // Verificar cada 2 segundos
+}
+
     </script>
 </body>
 </html>
