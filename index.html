@@ -19,6 +19,11 @@
 <body class="bg-gray-100">
     <div class="max-w-3xl mx-auto space-y-6 p-4">
         <h1 id="campaña-solidaria-b4a" class="text-2xl font-bold text-center mb-6">Campaña Solidaria B4A</h1>
+        <p class="text-sm text-gray-600 mb-4">
+            Instrucciones generales: Este sistema permite gestionar donaciones para la campaña solidaria. 
+            Mueva productos del almacén al carro, seleccione una familia y confirme la cooperación. 
+            Tenga en cuenta que hay un breve tiempo de reacción entre cada acción mientras se actualizan los datos.
+        </p>
 
         <div class="section bg-white p-3 rounded shadow">
             <h2 id="resumen" class="text-xl font-semibold mb-3">Resumen</h2>
@@ -36,11 +41,17 @@
 
         <div class="section bg-white p-3 rounded shadow">
             <h2 id="almacén" class="text-xl font-semibold mb-3">Almacén</h2>
+            <p class="text-sm text-gray-600 mb-2">
+                Instrucción: Use el botón "+" para mover productos al carro.
+            </p>
             <div id="almacen" class="space-y-2"></div>
         </div>
 
         <div class="section bg-white p-3 rounded shadow">
             <h2 id="carro" class="text-xl font-semibold mb-3">Carro</h2>
+            <p class="text-sm text-gray-600 mb-2">
+                Instrucción: Use el botón "-" para devolver productos al almacén de uno en uno.
+            </p>
             <div id="carroItems" class="mb-4 space-y-2"></div>
             <div class="flex items-center space-x-4">
                 <select id="selectFamilia" class="border p-2 rounded text-sm">
@@ -52,6 +63,9 @@
 
         <div class="section bg-white p-3 rounded shadow">
             <h2 id="bodega-solidaria" class="text-xl font-semibold mb-3">Bodega Solidaria</h2>
+            <p class="text-sm text-gray-600 mb-2">
+                Instrucción: Aquí se muestran los productos donados y las familias que han cooperado.
+            </p>
             <table class="w-full text-sm">
                 <thead>
                     <tr>
@@ -71,7 +85,9 @@
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-isIp-X9wTXLuARCDpxHlHJ35P2KBDa_WvJbjgMrq7XJu0tpxKz4n-PXRL0rB3Wsfew/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzL1oPsYM1N2fkofZqF4AJoC2UPMDeRdj-pFoCOh50YOpLhgWh0Oerg-4uUBduSkTas/exec';
+        const CACHE_DURATION = 30000; // medio minuto en milisegundos
+        let dataCache = {};
         
         async function fetchData(action, params = {}) {
             try {
@@ -91,8 +107,31 @@
             }
         }
 
-        async function updateAlmacen() {
-            const productos = await fetchData('getProductos');
+        async function getCachedData(key, fetchFunction) {
+            const now = Date.now();
+            if (!dataCache[key] || now - dataCache[key].timestamp > CACHE_DURATION) {
+                const data = await fetchFunction();
+                dataCache[key] = { data: data, timestamp: now };
+            }
+            return dataCache[key].data;
+        }
+
+        async function batchGetData(requests) {
+            return await fetchData('batchGet', { requests: JSON.stringify(requests) });
+        }
+
+        async function updateAll() {
+            const batchData = await batchGetData(['productos', 'familias', 'carro', 'bodega', 'porcentajes']);
+            if (batchData) {
+                updateAlmacenUI(batchData.productos);
+                updateFamiliasUI(batchData.familias);
+                updateCarroUI(batchData.carro);
+                updateBodegaUI(batchData.bodega);
+                updatePorcentajesUI(batchData.porcentajes);
+            }
+        }
+
+        function updateAlmacenUI(productos) {
             if (!productos) return;
             const almacen = document.getElementById('almacen');
             almacen.innerHTML = productos.slice(1).map(producto => `
@@ -106,8 +145,7 @@
             `).join('');
         }
 
-        async function updateFamilias() {
-            const familias = await fetchData('getFamilias');
+        function updateFamiliasUI(familias) {
             if (!familias) return;
             const selectFamilia = document.getElementById('selectFamilia');
             selectFamilia.innerHTML = '<option value="">Selecciona Familia</option>' + 
@@ -117,8 +155,7 @@
             familiasPendientes.innerHTML = familias.slice(1).map(familia => `<div data-id="${familia[0]}">${familia[1]}</div>`).join('');
         }
 
-        async function updateCarro() {
-            const carro = await fetchData('getCarro');
+        function updateCarroUI(carro) {
             if (!carro) return;
             const carroItems = document.getElementById('carroItems');
             carroItems.innerHTML = carro.slice(1).map(item => `
@@ -132,8 +169,7 @@
             `).join('');
         }
 
-        async function updateBodega() {
-            const bodega = await fetchData('getBodega');
+        function updateBodegaUI(bodega) {
             if (!bodega) return;
             const bodegaItems = document.getElementById('bodegaItems');
             bodegaItems.innerHTML = bodega.slice(1).map(item => `
@@ -143,6 +179,12 @@
                     <td>${item[3]}</td>
                 </tr>
             `).join('');
+        }
+
+        function updatePorcentajesUI(porcentajes) {
+            if (!porcentajes) return;
+            document.getElementById('porcentajeProductos').textContent = porcentajes.productos.toFixed(1) + '%';
+            document.getElementById('porcentajeFamilias').textContent = porcentajes.familias.toFixed(1) + '%';
         }
 
         async function confirmarCooperacion() {
@@ -155,15 +197,7 @@
             try {
                 const result = await fetchData('confirmarCooperacion', { familiaId });
                 if (result.success) {
-                    await updateCarro();
-                    await updateBodega();
-                    await updateFamilias();
-                    await updatePorcentajes();
-                    // Eliminar la familia de la lista de pendientes
-                    const familiaElement = document.querySelector(`#familiasPendientes div[data-id="${familiaId}"]`);
-                    if (familiaElement) {
-                        familiaElement.remove();
-                    }
+                    await updateAll();
                     alert('Cooperación confirmada');
                 } else {
                     alert('Hubo un error al confirmar la cooperación: ' + (result.error || 'Error desconocido'));
@@ -178,9 +212,7 @@
             try {
                 const result = await fetchData('moverProducto', { id, cantidad, direccion });
                 if (result.success) {
-                    await updateAlmacen();
-                    await updateCarro();
-                    await updatePorcentajes();
+                    await updateAll();
                 } else {
                     alert('Hubo un error al mover el producto: ' + (result.error || 'Error desconocido'));
                 }
@@ -190,21 +222,8 @@
             }
         }
 
-        async function updatePorcentajes() {
-            const porcentajes = await fetchData('getPorcentajes');
-            if (porcentajes) {
-                document.getElementById('porcentajeProductos').textContent = porcentajes.productos.toFixed(1) + '%';
-                document.getElementById('porcentajeFamilias').textContent = porcentajes.familias.toFixed(1) + '%';
-            }
-        }
-
         async function initPage() {
-            await updateAlmacen();
-            await updateFamilias();
-            await updateCarro();
-            await updateBodega();
-            await updatePorcentajes();
-
+            await updateAll();
             document.getElementById('confirmarCooperacion').addEventListener('click', confirmarCooperacion);
         }
 
