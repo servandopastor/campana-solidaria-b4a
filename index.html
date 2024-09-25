@@ -6,15 +6,23 @@
     <title>Campaña Solidaria B4A</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Aseguramos un mejor diseño en pantallas móviles */
+        /* Mejoras para móviles */
         @media (max-width: 640px) {
             .producto-item {
-                font-size: 0.875rem; /* Ajustar el tamaño de texto en móviles */
+                font-size: 0.875rem; /* Texto más pequeño en móviles */
             }
-
             .boton-cantidad {
-                padding: 0.25rem 0.5rem; /* Botones más compactos */
-                font-size: 0.75rem; /* Tamaño de texto más pequeño en botones */
+                padding: 0.25rem 0.5rem; /* Botones más pequeños */
+                font-size: 0.75rem; /* Texto más pequeño en botones */
+            }
+            .almacen-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px;
+            }
+            .almacen-item span {
+                flex-grow: 1;
             }
         }
     </style>
@@ -189,11 +197,115 @@
         function updateAlmacen() {
             const almacenEl = document.getElementById('almacen');
             almacenEl.innerHTML = productos.map(p => `
-                <div class="producto-item flex justify-between items-center">
+                <div class="almacen-item">
                     <span>${p.nombre}: ${p.cantidad} ${p.unidad}</span>
                     <div>
                         <button onclick="addToCart('${p.id}')" class="boton-cantidad bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded mr-2">+</button>
                         <button onclick="removeFromCart('${p.id}')" class="boton-cantidad bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">-</button>
                     </div>
                 </div>
-            `
+            `).join('');
+        }
+
+        // Actualizar el carro
+        function updateCarro() {
+            const carroEl = document.getElementById('carroItems');
+            carroEl.innerHTML = carro.length ? carro.map(c => `
+                <div class="almacen-item">
+                    <span>${c.nombre}: ${c.cantidad} ${c.unidad}</span>
+                    <div>
+                        <button onclick="addToCart('${c.id}')" class="boton-cantidad bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded mr-2">+</button>
+                        <button onclick="removeFromCart('${c.id}')" class="boton-cantidad bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">-</button>
+                    </div>
+                </div>
+            `).join('') : '<p>El carro está vacío</p>';
+        }
+
+        // Función para agregar al carro
+        function addToCart(productId) {
+            const producto = productos.find(p => p.id === productId);
+            const itemEnCarro = carro.find(c => c.id === productId);
+
+            if (producto && producto.cantidad > 0) {
+                if (itemEnCarro) {
+                    itemEnCarro.cantidad++;
+                } else {
+                    carro.push({...producto, cantidad: 1});
+                }
+                producto.cantidad--;
+                updateUI();
+            }
+        }
+
+        // Función para remover del carro
+        function removeFromCart(productId) {
+            const itemEnCarro = carro.find(c => c.id === productId);
+            const producto = productos.find(p => p.id === productId);
+
+            if (itemEnCarro && itemEnCarro.cantidad > 0) {
+                itemEnCarro.cantidad--;
+                producto.cantidad++;
+                
+                if (itemEnCarro.cantidad === 0) {
+                    const index = carro.indexOf(itemEnCarro);
+                    carro.splice(index, 1);
+                }
+                
+                updateUI();
+            }
+        }
+
+        // Actualizar la Bodega Solidaria
+        function updateBodegaSolidaria() {
+            const bodegaEl = document.querySelector('#bodegaSolidaria tbody');
+            bodegaEl.innerHTML = bodega.map(b => `
+                <tr>
+                    <td>${b.producto}</td>
+                    <td>${b.cantidad}</td>
+                    <td>${b.familia}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Actualizar familias pendientes
+        function updateFamiliasPendientes() {
+            const familiasPendientesEl = document.getElementById('familiasPendientes');
+            const familiasPendientes = familias.filter(f => !bodega.some(b => b.familia === f.nombre));
+
+            familiasPendientesEl.innerHTML = familiasPendientes.map(f => `
+                <div>${f.nombre}</div>
+            `).join('');
+
+            const selectFamilia = document.getElementById('selectFamilia');
+            selectFamilia.innerHTML = '<option value="">Selecciona Familia</option>' + 
+                familiasPendientes.map(f => `<option value="${f.id}">${f.nombre}</option>`).join('');
+        }
+
+        // Actualizar el resumen
+        function updateResumen() {
+            const totalProductos = productos.reduce((sum, p) => sum + p.cantidad, 0);
+            const productosComprometidos = bodega.reduce((sum, b) => sum + b.cantidad, 0);
+            const porcentajeProductos = (productosComprometidos / totalProductos * 100).toFixed(1);
+            document.getElementById('porcentajeProductos').textContent = `${porcentajeProductos}%`;
+
+            const porcentajeFamilias = ((familias.length - familias.filter(f => !bodega.some(b => b.familia === f.nombre)).length) / familias.length * 100).toFixed(1);
+            document.getElementById('porcentajeFamilias').textContent = `${porcentajeFamilias}%`;
+        }
+
+        // Función para actualizar la interfaz con los datos cargados
+        function updateUI() {
+            updateAlmacen();
+            updateCarro();
+            updateBodegaSolidaria();
+            updateFamiliasPendientes();
+            updateResumen();
+        }
+
+        // Cargar datos al iniciar la página
+        document.addEventListener('DOMContentLoaded', loadData);
+
+        // Asociar el botón confirmar cooperación con su acción
+        document.getElementById('confirmarCooperacion').addEventListener('click', confirmarCooperacion);
+    </script>
+</body>
+</html>
