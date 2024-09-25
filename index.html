@@ -94,7 +94,7 @@
                     <input id="nuevoValor" type="text" class="p-2 border rounded" placeholder="Ej. Nuevo valor del campo">
                 </div>
 
-                <button id="guardarCambios" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" disabled>
+                <button id="guardarCambios" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
                     Guardar Cambios
                 </button>
             </div>
@@ -147,7 +147,7 @@
             const response = await fetch(`https://api.github.com/repos/servandopastor/campana-solidaria-b4a/contents/${filePath}`, {
                 method: 'PUT',
                 headers: {
-                    Authorization: `token ${GITHUB_TOKEN}`, // Asegúrate de reemplazar con tu token
+                    Authorization: `token ${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}`, // Asegúrate de reemplazar con tu token
                     Accept: 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
@@ -165,47 +165,41 @@
             }
         }
 
-        // Función para solicitar contraseña antes de habilitar el botón
-        function solicitarContraseña() {
+        // Solicitar contraseña antes de permitir cambios
+        async function solicitarContraseñaYGuardar() {
             const inputPassword = prompt("Por favor, ingresa la contraseña de administrador:");
             if (inputPassword === password) {
-                document.getElementById('guardarCambios').disabled = false;
-                alert("Acceso concedido. Puedes editar los registros.");
+                // Si la contraseña es correcta, realizar los cambios
+                const archivo = document.getElementById('archivo').value;
+                const registroId = document.getElementById('registroId').value;
+                const campo = document.getElementById('campo').value;
+                const nuevoValor = document.getElementById('nuevoValor').value;
+
+                let contenido = (archivo.includes('bodega')) ? bodega : productos;  // Determinar qué archivo se va a modificar
+
+                // Buscar el registro por ID
+                let registro = contenido.find(item => item.id === registroId);
+
+                if (registro) {
+                    registro[campo] = nuevoValor;  // Modificar el campo correspondiente
+
+                    // Actualizar el archivo en GitHub
+                    await updateFileOnGitHub(archivo, contenido);
+
+                    alert('Registro actualizado exitosamente.');
+                    updateUI();  // Actualizar la interfaz
+                } else {
+                    alert('Registro no encontrado.');
+                }
             } else {
-                alert("Contraseña incorrecta. No puedes editar los registros.");
+                alert("Contraseña incorrecta. No se han realizado cambios.");
             }
         }
 
-        // Ejecutar la solicitud de contraseña cuando se intente editar
-        document.getElementById('guardarCambios').addEventListener('click', async () => {
-            const archivo = document.getElementById('archivo').value;
-            const registroId = document.getElementById('registroId').value;
-            const campo = document.getElementById('campo').value;
-            const nuevoValor = document.getElementById('nuevoValor').value;
+        // Evento para guardar cambios con contraseña
+        document.getElementById('guardarCambios').addEventListener('click', solicitarContraseñaYGuardar);
 
-            let contenido = (archivo.includes('bodega')) ? bodega : productos;  // Determinar qué archivo se va a modificar
-
-            // Buscar el registro por ID
-            let registro = contenido.find(item => item.id === registroId);
-
-            if (registro) {
-                registro[campo] = nuevoValor;  // Modificar el campo correspondiente
-
-                // Actualizar el archivo en GitHub
-                await updateFileOnGitHub(archivo, contenido);
-
-                alert('Registro actualizado exitosamente.');
-                updateUI();  // Actualizar la interfaz
-            } else {
-                alert('Registro no encontrado.');
-            }
-        });
-
-        // Llamar a la solicitud de contraseña cuando se cargue la página
-        document.addEventListener('DOMContentLoaded', () => {
-            solicitarContraseña();
-            loadData();  // Cargar datos cuando el DOM esté listo
-        });
+        document.addEventListener('DOMContentLoaded', loadData);  // Cargar datos cuando el DOM esté listo
     </script>
 </body>
 </html>
