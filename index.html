@@ -5,25 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campaña Solidaria B4A</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-size: 14px;
-        }
-        @media (max-width: 640px) {
-            body {
-                font-size: 12px;
-            }
-        }
-    </style>
 </head>
 <body class="bg-gray-100">
     <div class="max-w-3xl mx-auto space-y-6 p-4">
         <h1 id="campaña-solidaria-b4a" class="text-2xl font-bold text-center mb-6">Campaña Solidaria B4A</h1>
-        
-        <!-- Sala de Espera -->
+
         <div id="sala-espera">
             <div class="section bg-white p-3 rounded shadow mb-4">
-                <h2 class="text-xl font-semibold mb-3">Resumen</h2>
+                <h2 id="resumen" class="text-xl font-semibold mb-3">Resumen</h2>
                 <div class="space-y-2">
                     <div class="flex justify-between">
                         <span class="font-medium">Productos Comprometidos:</span>
@@ -42,7 +31,7 @@
                     El almacén está ocupado. Por favor, espere su turno.
                 </div>
                 <div id="entrada-almacen">
-                    <select id="select-familia" class="border p-2 rounded text-sm">
+                    <select id="select-familia" class="border p-2 rounded text-sm mb-2">
                         <option value="">Selecciona tu Familia</option>
                     </select>
                     <button id="entrar-almacen" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Entrar al Almacén</button>
@@ -55,11 +44,9 @@
             </div>
         </div>
 
-        <!-- Almacén -->
         <div id="almacen" class="hidden">
             <div class="section bg-white p-3 rounded shadow mb-4">
                 <h2 class="text-xl font-semibold mb-3">Almacén</h2>
-                <p id="familia-actual" class="mb-3 font-bold"></p>
                 <div id="productos-almacen" class="space-y-2"></div>
             </div>
 
@@ -89,191 +76,7 @@
     </div>
 
     <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHB03TUNEHgnEm0ppz3a88PgSEjY02C2bLwRSA7jPcoOG5Xx00HS89TJzSNO4OVrKAFQ/exec';
-    let familiaActual = null;
-
-    async function fetchData(action, params = {}) {
-        try {
-            const url = new URL(SCRIPT_URL);
-            url.searchParams.append('action', action);
-            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-            
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return await response.json();
-        } catch (error) {
-            console.error("Error fetching data:", error);
-            return null;
-        }
-    }
-
-    async function verificarAlmacenOcupado() {
-        return await fetchData('verificarAlmacenOcupado');
-    }
-
-async function entrarAlAlmacen() {
-    const familiaId = document.getElementById('select-familia').value;
-    if (!familiaId) {
-        alert('Por favor, selecciona una familia');
-        return;
-    }
-    console.log('Intentando entrar al almacén con familia:', familiaId);
-    const result = await fetchData('entrarAlAlmacen', { familiaId });
-    console.log('Resultado de entrarAlAlmacen:', result);
-    if (result && result.success) {
-        familiaActual = familiaId;
-        const salaEspera = document.getElementById('sala-espera');
-        const almacen = document.getElementById('almacen');
-        const familiaActualElement = document.getElementById('familia-actual');
-        
-        if (salaEspera) salaEspera.classList.add('hidden');
-        if (almacen) almacen.classList.remove('hidden');
-        if (familiaActualElement) familiaActualElement.textContent = `Familia actual: ${familiaId}`;
-        
-        console.log('Cambiando a vista de almacén');
-        await updateAlmacen();
-        await updateCarro();
-        await updateBodega();
-    } else {
-        console.error('Error al entrar al almacén:', result ? result.error : 'Respuesta vacía');
-        alert('Hubo un error al entrar al almacén. Por favor, intenta de nuevo.');
-    }
-}
-
-    async function salirDelAlmacen() {
-        const result = await fetchData('salirDelAlmacen');
-        if (result.success) {
-            familiaActual = null;
-            document.getElementById('almacen').classList.add('hidden');
-            document.getElementById('sala-espera').classList.remove('hidden');
-            await updateResumen();
-            await updateFamiliasPendientes();
-        }
-    }
-
-    async function updateAlmacen() {
-        const productos = await fetchData('getProductos');
-        if (!productos) return;
-        const almacen = document.getElementById('productos-almacen');
-        almacen.innerHTML = productos.slice(1).map(producto => `
-            <div class="flex justify-between items-center text-sm">
-                <span>${producto[1]}</span>
-                <div>
-                    <span>${producto[2]} ${producto[3]}</span>
-                    <button onclick="moverProducto('${producto[0]}', 1, 'almacenToCarro')" class="ml-1 px-2 py-1 bg-green-500 text-white rounded">+</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    async function updateCarro() {
-        const carro = await fetchData('getCarro');
-        if (!carro) return;
-        const carroItems = document.getElementById('carro-items');
-        carroItems.innerHTML = carro.slice(1).map(item => `
-            <div class="flex justify-between items-center text-sm">
-                <span>${item[1]}</span>
-                <div>
-                    <span>${item[2]} ${item[3]}</span>
-                    <button onclick="moverProducto('${item[0]}', -1, 'carroToAlmacen')" class="ml-2 px-2 py-1 bg-red-500 text-white rounded">-</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    async function moverProducto(id, cantidad, direccion) {
-        const result = await fetchData('moverProducto', { id, cantidad, direccion });
-        if (result.success) {
-            await updateAlmacen();
-            await updateCarro();
-        } else {
-            alert('Hubo un error al mover el producto: ' + (result.error || 'Error desconocido'));
-        }
-    }
-
-    async function confirmarCooperacion() {
-        if (!familiaActual) {
-            alert('No hay una familia seleccionada');
-            return;
-        }
-
-        const result = await fetchData('confirmarCooperacion', { familiaId: familiaActual });
-        if (result.success) {
-            alert('Cooperación confirmada');
-            await salirDelAlmacen();
-        } else {
-            alert('Hubo un error al confirmar la cooperación: ' + (result.error || 'Error desconocido'));
-        }
-    }
-
-    async function updateResumen() {
-        const porcentajes = await fetchData('getPorcentajes');
-        if (porcentajes) {
-            document.getElementById('porcentaje-productos').textContent = porcentajes.productos.toFixed(1) + '%';
-            document.getElementById('porcentaje-familias').textContent = porcentajes.familias.toFixed(1) + '%';
-        }
-    }
-
-    async function updateBodega() {
-        const bodega = await fetchData('getBodega');
-        if (!bodega) return;
-        const bodegaItems = document.getElementById('bodega-items');
-        bodegaItems.innerHTML = bodega.slice(1).map(item => `
-            <tr>
-                <td>${item[0]}</td>
-                <td>${item[1]} ${item[2]}</td>
-                <td>${item[3]}</td>
-            </tr>
-        `).join('');
-    }
-
-    async function updateFamiliasPendientes() {
-        const familias = await fetchData('getFamilias');
-        if (!familias) return;
-        const familiasPendientes = document.getElementById('familias-pendientes-lista');
-        familiasPendientes.innerHTML = familias.slice(1)
-            .filter(familia => !familia[2]) // Asumiendo que la tercera columna indica si ya cooperó
-            .map(familia => `<div>${familia[1]}</div>`)
-            .join('');
-    }
-
-function initPage() {
-    console.log('Inicializando página');
-    const selectFamilia = document.getElementById('select-familia');
-    const entrarAlmacenButton = document.getElementById('entrar-almacen');
-    const confirmarCooperacionButton = document.getElementById('confirmar-cooperacion');
-
-    if (selectFamilia) {
-        fetchData('getFamilias').then(familias => {
-            if (familias) {
-                selectFamilia.innerHTML = '<option value="">Selecciona tu Familia</option>' + 
-                    familias.slice(1).map(familia => `<option value="${familia[0]}">${familia[1]}</option>`).join('');
-            }
-        });
-    }
-
-    if (entrarAlmacenButton) {
-        entrarAlmacenButton.addEventListener('click', entrarAlAlmacen);
-    }
-
-    if (confirmarCooperacionButton) {
-        confirmarCooperacionButton.addEventListener('click', confirmarCooperacion);
-    }
-
-    updateResumen();
-    updateFamiliasPendientes();
-
-    setInterval(async () => {
-        const ocupado = await verificarAlmacenOcupado();
-        const mensajeEspera = document.getElementById('mensaje-espera');
-        const entradaAlmacen = document.getElementById('entrada-almacen');
-        if (mensajeEspera) mensajeEspera.classList.toggle('hidden', !ocupado);
-        if (entradaAlmacen) entradaAlmacen.classList.toggle('hidden', ocupado);
-    }, 2000); // Verificar cada 2 segundos
-}
-
+        // Aquí va tu código JavaScript
     </script>
 </body>
 </html>
