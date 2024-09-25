@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -27,47 +26,36 @@
             <p class="font-bold">
                 Tenga en cuenta que hay un tiempo de reacción de 10 segundos entre cada acción mientras se actualizan los datos.
             </p>
+        </div>
 
-        <div class="section bg-white p-3 rounded shadow">
-            <h2 id="resumen" class="text-xl font-semibold mb-3">Resumen</h2>
-            <div class="space-y-2">
-                <div class="flex justify-between">
-                    <span class="font-medium">Productos Comprometidos:</span>
-                    <span id="porcentajeProductos" class="font-bold">0.0%</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="font-medium">Familias Comprometidas:</span>
-                    <span id="porcentajeFamilias" class="font-bold">0.0%</span>
-                </div>
+        <div id="fila-espera" class="section bg-white p-3 rounded shadow">
+            <h2 class="text-xl font-semibold mb-3">Fila de Espera</h2>
+            <div id="mensaje-espera" class="hidden mb-3 text-red-600">
+                El almacén está ocupado. Por favor, espere su turno.
             </div>
-        </div>
-
-        <div class="section bg-white p-3 rounded shadow">
-            <h2 id="almacén" class="text-xl font-semibold mb-3">Almacén</h2>
-            <p class="text-sm text-gray-600 mb-2">
-                Instrucción: Use el botón "+" para mover productos al carro.
-            </p>
-            <div id="almacen" class="space-y-2"></div>
-        </div>
-
-        <div class="section bg-white p-3 rounded shadow">
-            <h2 id="carro" class="text-xl font-semibold mb-3">Carro</h2>
-            <p class="text-sm text-gray-600 mb-2">
-                Instrucción: Use el botón "-" para devolver productos al almacén de uno en uno.
-            </p>
-            <div id="carroItems" class="mb-4 space-y-2"></div>
-            <div class="flex items-center space-x-4">
-                <select id="selectFamilia" class="border p-2 rounded text-sm">
-                    <option value="">Selecciona Familia</option>
+            <div id="entrada-almacen">
+                <select id="select-familia" class="border p-2 rounded text-sm">
+                    <option value="">Selecciona tu Familia</option>
                 </select>
-                <button id="confirmarCooperacion" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Confirmar Cooperación</button>
+                <button id="entrar-almacen" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Entrar al Almacén</button>
             </div>
+        </div>
+
+        <div id="almacen" class="section bg-white p-3 rounded shadow hidden">
+            <h2 class="text-xl font-semibold mb-3">Almacén</h2>
+            <p id="familia-actual" class="mb-3 font-bold"></p>
+            <div id="productos-almacen" class="space-y-2"></div>
+            <div id="carro" class="mt-4">
+                <h3 class="text-lg font-semibold mb-2">Carro</h3>
+                <div id="carro-items" class="space-y-2"></div>
+            </div>
+            <button id="confirmar-cooperacion" class="mt-4 bg-green-500 text-white px-3 py-1 rounded text-sm">Confirmar Cooperación</button>
         </div>
 
         <div class="section bg-white p-3 rounded shadow">
             <h2 id="bodega-solidaria" class="text-xl font-semibold mb-3">Bodega Solidaria</h2>
             <p class="text-sm text-gray-600 mb-2">
-                Instrucción: Aquí se muestran los productos donados y las familias que han cooperado.
+                Aquí se muestran los productos donados y las familias que han cooperado.
             </p>
             <table class="w-full text-sm">
                 <thead>
@@ -77,160 +65,186 @@
                         <th class="text-left">Familia</th>
                     </tr>
                 </thead>
-                <tbody id="bodegaItems"></tbody>
+                <tbody id="bodega-items"></tbody>
             </table>
         </div>
 
         <div class="section bg-white p-3 rounded shadow">
             <h2 id="familias-pendientes" class="text-xl font-semibold mb-3">Familias Pendientes</h2>
-            <div id="familiasPendientes" class="space-y-1 text-sm"></div>
+            <div id="familias-pendientes-lista" class="space-y-1 text-sm"></div>
         </div>
     </div>
 
-    <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzL1oPsYM1N2fkofZqF4AJoC2UPMDeRdj-pFoCOh50YOpLhgWh0Oerg-4uUBduSkTas/exec';
-        const CACHE_DURATION = 30000; // medio minuto en milisegundos
-        let dataCache = {};
-        
-        async function fetchData(action, params = {}) {
-            try {
-                const url = new URL(SCRIPT_URL);
-                url.searchParams.append('action', action);
-                Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-                
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return await response.json();
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                alert("Hubo un error al cargar los datos. Por favor, intenta de nuevo más tarde.");
-                return null;
-            }
-        }
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHB03TUNEHgnEm0ppz3a88PgSEjY02C2bLwRSA7jPcoOG5Xx00HS89TJzSNO4OVrKAFQ/exec';
+    let familiaActual = null;
 
-        async function getCachedData(key, fetchFunction) {
-            const now = Date.now();
-            if (!dataCache[key] || now - dataCache[key].timestamp > CACHE_DURATION) {
-                const data = await fetchFunction();
-                dataCache[key] = { data: data, timestamp: now };
-            }
-            return dataCache[key].data;
-        }
-
-        async function batchGetData(requests) {
-            return await fetchData('batchGet', { requests: JSON.stringify(requests) });
-        }
-
-        async function updateAll() {
-            const batchData = await batchGetData(['productos', 'familias', 'carro', 'bodega', 'porcentajes']);
-            if (batchData) {
-                updateAlmacenUI(batchData.productos);
-                updateFamiliasUI(batchData.familias);
-                updateCarroUI(batchData.carro);
-                updateBodegaUI(batchData.bodega);
-                updatePorcentajesUI(batchData.porcentajes);
-            }
-        }
-
-        function updateAlmacenUI(productos) {
-            if (!productos) return;
-            const almacen = document.getElementById('almacen');
-            almacen.innerHTML = productos.slice(1).map(producto => `
-                <div class="flex justify-between items-center text-sm">
-                    <span>${producto[1]}</span>
-                    <div>
-                        <span>${producto[2]} ${producto[3]}</span>
-                        <button onclick="moverProducto('${producto[0]}', 1, 'almacenToCarro')" class="ml-1 px-2 py-1 bg-green-500 text-white rounded">+</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function updateFamiliasUI(familias) {
-            if (!familias) return;
-            const selectFamilia = document.getElementById('selectFamilia');
-            selectFamilia.innerHTML = '<option value="">Selecciona Familia</option>' + 
-                familias.slice(1).map(familia => `<option value="${familia[0]}">${familia[1]}</option>`).join('');
+    async function fetchData(action, params = {}) {
+        try {
+            const url = new URL(SCRIPT_URL);
+            url.searchParams.append('action', action);
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
             
-            const familiasPendientes = document.getElementById('familiasPendientes');
-            familiasPendientes.innerHTML = familias.slice(1).map(familia => `<div data-id="${familia[0]}">${familia[1]}</div>`).join('');
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            alert("Hubo un error al cargar los datos. Por favor, intenta de nuevo más tarde.");
+            return null;
         }
+    }
 
-        function updateCarroUI(carro) {
-            if (!carro) return;
-            const carroItems = document.getElementById('carroItems');
-            carroItems.innerHTML = carro.slice(1).map(item => `
-                <div class="flex justify-between items-center text-sm">
-                    <span>${item[1]}</span>
-                    <div>
-                        <span>${item[2]} ${item[3]}</span>
-                        <button onclick="moverProducto('${item[0]}', -1, 'carroToAlmacen')" class="ml-2 px-2 py-1 bg-red-500 text-white rounded">-</button>
-                    </div>
+    async function verificarAlmacenOcupado() {
+        return await fetchData('verificarAlmacenOcupado');
+    }
+
+    async function entrarAlAlmacen() {
+        const familiaId = document.getElementById('select-familia').value;
+        if (!familiaId) {
+            alert('Por favor, selecciona una familia');
+            return;
+        }
+        const result = await fetchData('entrarAlAlmacen', { familiaId });
+        if (result.success) {
+            familiaActual = familiaId;
+            document.getElementById('fila-espera').classList.add('hidden');
+            document.getElementById('almacen').classList.remove('hidden');
+            document.getElementById('familia-actual').textContent = `Familia actual: ${familiaId}`;
+            await updateAlmacen();
+            await updateCarro();
+        } else {
+            alert(result.error);
+        }
+    }
+
+    async function salirDelAlmacen() {
+        const result = await fetchData('salirDelAlmacen');
+        if (result.success) {
+            familiaActual = null;
+            document.getElementById('almacen').classList.add('hidden');
+            document.getElementById('fila-espera').classList.remove('hidden');
+        }
+    }
+
+    async function updateAlmacen() {
+        const productos = await fetchData('getProductos');
+        if (!productos) return;
+        const almacen = document.getElementById('productos-almacen');
+        almacen.innerHTML = productos.slice(1).map(producto => `
+            <div class="flex justify-between items-center text-sm">
+                <span>${producto[1]}</span>
+                <div>
+                    <span>${producto[2]} ${producto[3]}</span>
+                    <button onclick="moverProducto('${producto[0]}', 1, 'almacenToCarro')" class="ml-1 px-2 py-1 bg-green-500 text-white rounded">+</button>
                 </div>
-            `).join('');
-        }
+            </div>
+        `).join('');
+    }
 
-        function updateBodegaUI(bodega) {
-            if (!bodega) return;
-            const bodegaItems = document.getElementById('bodegaItems');
-            bodegaItems.innerHTML = bodega.slice(1).map(item => `
-                <tr>
-                    <td>${item[0]}</td>
-                    <td>${item[1]} ${item[2]}</td>
-                    <td>${item[3]}</td>
-                </tr>
-            `).join('');
-        }
+    async function updateCarro() {
+        const carro = await fetchData('getCarro');
+        if (!carro) return;
+        const carroItems = document.getElementById('carro-items');
+        carroItems.innerHTML = carro.slice(1).map(item => `
+            <div class="flex justify-between items-center text-sm">
+                <span>${item[1]}</span>
+                <div>
+                    <span>${item[2]} ${item[3]}</span>
+                    <button onclick="moverProducto('${item[0]}', -1, 'carroToAlmacen')" class="ml-2 px-2 py-1 bg-red-500 text-white rounded">-</button>
+                </div>
+            </div>
+        `).join('');
+    }
 
-        function updatePorcentajesUI(porcentajes) {
-            if (!porcentajes) return;
-            document.getElementById('porcentajeProductos').textContent = porcentajes.productos.toFixed(1) + '%';
-            document.getElementById('porcentajeFamilias').textContent = porcentajes.familias.toFixed(1) + '%';
-        }
-
-        async function confirmarCooperacion() {
-            const familiaId = document.getElementById('selectFamilia').value;
-            if (!familiaId) {
-                alert('Por favor, selecciona una familia');
-                return;
+    async function moverProducto(id, cantidad, direccion) {
+        try {
+            const result = await fetchData('moverProducto', { id, cantidad, direccion });
+            if (result.success) {
+                await updateAlmacen();
+                await updateCarro();
+            } else {
+                alert('Hubo un error al mover el producto: ' + (result.error || 'Error desconocido'));
             }
+        } catch (error) {
+            console.error("Error moving product:", error);
+            alert("Hubo un error al mover el producto. Por favor, intenta de nuevo más tarde.");
+        }
+    }
 
-            try {
-                const result = await fetchData('confirmarCooperacion', { familiaId });
-                if (result.success) {
-                    await updateAll();
-                    alert('Cooperación confirmada');
-                } else {
-                    alert('Hubo un error al confirmar la cooperación: ' + (result.error || 'Error desconocido'));
-                }
-            } catch (error) {
-                console.error("Error confirming cooperation:", error);
-                alert("Hubo un error al confirmar la cooperación. Por favor, intenta de nuevo más tarde.");
+    async function confirmarCooperacion() {
+        if (!familiaActual) {
+            alert('No hay una familia seleccionada');
+            return;
+        }
+
+        try {
+            const result = await fetchData('confirmarCooperacion', { familiaId: familiaActual });
+            if (result.success) {
+                alert('Cooperación confirmada');
+                await salirDelAlmacen();
+                await updateAll();
+            } else {
+                alert('Hubo un error al confirmar la cooperación: ' + (result.error || 'Error desconocido'));
             }
+        } catch (error) {
+            console.error("Error confirming cooperation:", error);
+            alert("Hubo un error al confirmar la cooperación. Por favor, intenta de nuevo más tarde.");
+        }
+    }
+
+    async function updateAll() {
+        await updateAlmacen();
+        await updateCarro();
+        await updateBodega();
+        await updateFamiliasPendientes();
+    }
+
+    async function updateBodega() {
+        const bodega = await fetchData('getBodega');
+        if (!bodega) return;
+        const bodegaItems = document.getElementById('bodega-items');
+        bodegaItems.innerHTML = bodega.slice(1).map(item => `
+            <tr>
+                <td>${item[0]}</td>
+                <td>${item[1]} ${item[2]}</td>
+                <td>${item[3]}</td>
+            </tr>
+        `).join('');
+    }
+
+    async function updateFamiliasPendientes() {
+        const familias = await fetchData('getFamilias');
+        if (!familias) return;
+        const familiasPendientes = document.getElementById('familias-pendientes-lista');
+        familiasPendientes.innerHTML = familias.slice(1)
+            .filter(familia => !familia[2]) // Asumiendo que la tercera columna indica si ya cooperó
+            .map(familia => `<div>${familia[1]}</div>`)
+            .join('');
+    }
+
+    async function initPage() {
+        const selectFamilia = document.getElementById('select-familia');
+        const familias = await fetchData('getFamilias');
+        if (familias) {
+            selectFamilia.innerHTML = '<option value="">Selecciona tu Familia</option>' + 
+                familias.slice(1).map(familia => `<option value="${familia[0]}">${familia[1]}</option>`).join('');
         }
 
-        async function moverProducto(id, cantidad, direccion) {
-            try {
-                const result = await fetchData('moverProducto', { id, cantidad, direccion });
-                if (result.success) {
-                    await updateAll();
-                } else {
-                    alert('Hubo un error al mover el producto: ' + (result.error || 'Error desconocido'));
-                }
-            } catch (error) {
-                console.error("Error moving product:", error);
-                alert("Hubo un error al mover el producto. Por favor, intenta de nuevo más tarde.");
-            }
-        }
+        document.getElementById('entrar-almacen').addEventListener('click', entrarAlAlmacen);
+        document.getElementById('confirmar-cooperacion').addEventListener('click', confirmarCooperacion);
 
-        async function initPage() {
-            await updateAll();
-            document.getElementById('confirmarCooperacion').addEventListener('click', confirmarCooperacion);
-        }
+        await updateAll();
+        setInterval(async () => {
+            const ocupado = await verificarAlmacenOcupado();
+            document.getElementById('mensaje-espera').classList.toggle('hidden', !ocupado);
+            document.getElementById('entrada-almacen').classList.toggle('hidden', ocupado);
+        }, 5000); // Verificar cada 5 segundos
+    }
 
-        window.onload = initPage;
-    </script>
+    window.onload = initPage;
+</script>
 </body>
 </html>
