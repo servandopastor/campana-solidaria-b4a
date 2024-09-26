@@ -10,13 +10,13 @@
 <body class="bg-gray-100">
     <div class="max-w-3xl mx-auto space-y-6 p-4">
         <h1 id="campaña-solidaria-b4a" class="text-2xl font-bold text-center mb-2">Campaña Solidaria B4A</h1>
-        <p class="text-sm text-center mb-2">Siga las instrucciones en cada sección para participar en la campaña.</p>
+        <p class="text-sm text-center mb-2">Siga las instrucciones en cada sección para participar en la campaña solidaria.</p>
         <p class="text-sm text-center font-bold text-red-600 mb-4">Considere que hay un tiempo de actualización después de cada acción</p>
 
         <div id="sala-espera">
             <div class="section bg-white p-3 rounded shadow mb-4">
                 <h2 id="resumen" class="text-xl font-semibold mb-3">Resumen</h2>
-                <p class="text-sm mb-2">Este resumen muestra el progreso de la campaña.</p>
+                <p class="text-sm mb-2">Este resumen muestra el progreso actual de la campaña solidaria.</p>
                 <div class="space-y-2">
                     <div class="flex justify-between">
                         <span class="font-medium">Productos Comprometidos:</span>
@@ -31,7 +31,7 @@
 
             <div class="section bg-white p-3 rounded shadow mb-4">
                 <h2 id="zona-de-espera" class="text-xl font-semibold mb-3">Zona de espera para entrar al Almacén Solidario</h2>
-                <p class="text-sm mb-2">Seleccione su familia y espere su turno para entrar al almacén.</p>
+                <p class="text-sm mb-2">Seleccione su familia y espere su turno para entrar al almacén solidario.</p>
                 <div id="mensaje-espera" class="mb-3 text-blue-600">
                     El almacén está libre. Por favor, seleccione su familia para entrar.
                 </div>
@@ -46,15 +46,15 @@
 
         <div id="almacen" class="hidden space-y-6">
             <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-semibold mb-3">Almacén</h2>
-                <p class="text-sm mb-2">Seleccione la cantidad de productos que desea comprometer.</p>
+                <h2 class="text-xl font-semibold mb-3">Almacén Solidario</h2>
+                <p class="text-sm mb-2">Seleccione la cantidad de productos que desea comprometer para la campaña solidaria.</p>
                 <div id="productos-almacen" class="space-y-2"></div>
                 <button id="mover-al-carro" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mt-4">Mover al Carro</button>
             </div>
 
             <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-semibold mb-3">Carro</h2>
-                <p class="text-sm mb-2">Revise los productos seleccionados antes de confirmar.</p>
+                <h2 class="text-xl font-semibold mb-3">Carro de Cooperación</h2>
+                <p class="text-sm mb-2">Revise los productos seleccionados antes de confirmar su cooperación solidaria.</p>
                 <p id="familia-actual" class="mb-2 font-medium"></p>
                 <div id="carro-items" class="space-y-2 mb-4"></div>
                 <button id="confirmar-cooperacion" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">Confirmar Cooperación</button>
@@ -65,7 +65,7 @@
 
         <div id="bodega-solidaria" class="mt-8">
             <h2 class="text-xl font-semibold mb-3">Bodega Solidaria</h2>
-            <p class="text-sm mb-2">Aquí se muestran las cooperaciones confirmadas.</p>
+            <p class="text-sm mb-2">Aquí se muestran las cooperaciones confirmadas para la campaña solidaria.</p>
             <table class="w-full border-collapse border border-gray-300">
                 <thead>
                     <tr class="bg-gray-100">
@@ -80,7 +80,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwClmzbPHWGioppI-YnRTcKru-b-9MT1XNNdH_nOjBwVLFuyefMcphvttU1kK1Wriywiw/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyjPl7Z0d8T1Snrf0FEPTq02fqrd-rPVYkrEgo9iByszY_z5rKgpDG8GMth-EruFhjGEA/exec';
         let familiaActual = '';
 
         async function callApi(action, params = {}) {
@@ -92,6 +92,16 @@
             } catch (error) {
                 console.error(`Error llamando a la API (${action}):`, error);
                 return { success: false, error: error.message };
+            }
+        }
+
+        async function updateAll() {
+            await updateResumen();
+            await checkAlmacenStatus();
+            await updateBodegaSolidaria();
+            if (familiaActual) {
+                await loadProductos();
+                await updateCarro();
             }
         }
 
@@ -128,7 +138,6 @@
         }
 
         async function entrarAlmacen() {
-            console.log("Iniciando entrada al almacén...");
             const familiaSelect = document.getElementById('familia-select');
             familiaActual = familiaSelect.options[familiaSelect.selectedIndex].text;
             const familiaId = familiaSelect.value;
@@ -137,28 +146,22 @@
                 return;
             }
             const result = await callApi('entrarAlAlmacen', { familiaId });
-            console.log("Resultado de entrarAlAlmacen:", result);
             if (result.success) {
                 document.getElementById('sala-espera').classList.add('hidden');
                 document.getElementById('almacen').classList.remove('hidden');
                 document.getElementById('familia-actual').textContent = `Familia: ${familiaActual}`;
-                await loadProductos();
-                updateCarro();
+                await updateAll();
             } else {
                 alert(result.error || 'No se pudo entrar al almacén.');
             }
         }
 
         async function loadProductos() {
-            console.log("Iniciando carga de productos...");
             const productos = await callApi('getProductos');
-            console.log("Respuesta completa de getProductos:", productos);
             if (productos.success && productos.datos && productos.datos.length > 0) {
-                console.log("Productos recibidos:", productos.datos);
                 const container = document.getElementById('productos-almacen');
                 container.innerHTML = '';
                 productos.datos.forEach(producto => {
-                    console.log("Procesando producto:", producto);
                     const div = document.createElement('div');
                     div.className = 'flex justify-between items-center mb-2';
                     div.innerHTML = `
@@ -169,9 +172,7 @@
                     `;
                     container.appendChild(div);
                 });
-                console.log("Productos cargados exitosamente.");
             } else {
-                console.error('Error al cargar productos o no hay productos disponibles:', productos.error || 'No hay productos');
                 const container = document.getElementById('productos-almacen');
                 container.innerHTML = '<p class="text-red-500">No se pudieron cargar los productos o no hay productos disponibles.</p>';
             }
@@ -183,17 +184,18 @@
                 return;
             }
 
-            const productosSeleccionados = Array.from(document.querySelectorAll('#productos-almacen select')).map(select => ({
-                id: select.id.split('-')[1],
-                cantidad: parseInt(select.value)
-            })).filter(p => p.cantidad > 0);
+            const productosSeleccionados = Array.from(document.querySelectorAll('#productos-almacen select'))
+                .map(select => ({
+                    id: select.id.split('-')[1],
+                    cantidad: parseInt(select.value)
+                }))
+                .filter(p => p.cantidad > 0);
 
             for (const producto of productosSeleccionados) {
                 await callApi('moverProducto', { id: producto.id, cantidad: producto.cantidad });
             }
 
-            await loadProductos();
-            await updateCarro();
+            await updateAll();
         }
 
         async function updateCarro() {
@@ -203,26 +205,29 @@
                 container.innerHTML = '';
                 carro.items.forEach(item => {
                     const div = document.createElement('div');
-                    div.className = 'flex justify-between items-center';
+                    div.className = 'flex justify-between items-center mb-2';
                     div.innerHTML = `
                         <span>${item.nombre}: ${item.cantidad}</span>
+                        <button onclick="devolverProducto('${item.id}', ${item.cantidad})" class="bg-red-500 text-white px-2 py-1 rounded">Devolver</button>
                     `;
                     container.appendChild(div);
                 });
             }
         }
 
+        async function devolverProducto(id, cantidad) {
+            await callApi('moverProducto', { id, cantidad: -cantidad });
+            await updateAll();
+        }
+
         async function confirmarCooperacion() {
             const result = await callApi('confirmarCooperacion');
             if (result.success) {
-                alert('Cooperación confirmada. ¡Gracias por su ayuda!');
+                alert('Cooperación confirmada. ¡Gracias por su ayuda solidaria!');
                 document.getElementById('carro-items').innerHTML = '';
                 document.getElementById('familia-actual').textContent = '';
                 familiaActual = '';
-                await updateBodegaSolidaria();
-                await checkAlmacenStatus();
-                await updateResumen();
-                await loadProductos();
+                await updateAll();
             } else {
                 alert(result.error || 'No se pudo confirmar la cooperación.');
             }
@@ -245,11 +250,13 @@
             }
         }
 
-        function volverSalaEspera() {
+        async function volverSalaEspera() {
+            await callApi('salirDelAlmacen');
             document.getElementById('almacen').classList.add('hidden');
             document.getElementById('sala-espera').classList.remove('hidden');
             familiaActual = '';
             document.getElementById('familia-actual').textContent = '';
+            await updateAll();
         }
 
         document.getElementById('entrar-almacen').addEventListener('click', entrarAlmacen);
@@ -257,15 +264,9 @@
         document.getElementById('confirmar-cooperacion').addEventListener('click', confirmarCooperacion);
         document.getElementById('volver-sala-espera').addEventListener('click', volverSalaEspera);
 
-        updateResumen();
+        updateAll();
         loadFamilias();
-        checkAlmacenStatus();
-        updateBodegaSolidaria();
-        setInterval(() => {
-            updateResumen();
-            checkAlmacenStatus();
-            updateBodegaSolidaria();
-        }, 2000); // Actualiza cada 2 segundos
+        setInterval(updateAll, 2000); // Actualiza cada 2 segundos
     </script>
 </body>
 </html>
