@@ -80,7 +80,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyjPl7Z0d8T1Snrf0FEPTq02fqrd-rPVYkrEgo9iByszY_z5rKgpDG8GMth-EruFhjGEA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyHrpJQpIkhRBx8REg_0s70lBcfo9rSMPLcFOKxmNwJ4FiyZs8RBIoU16X3TBB31j3yqg/exec';
         let familiaActual = '';
 
         async function callApi(action, params = {}) {
@@ -166,7 +166,7 @@
                     div.className = 'flex justify-between items-center mb-2';
                     div.innerHTML = `
                         <span>${producto.nombre}</span>
-                        <select id="select-${producto.id}" class="border rounded p-1 ml-2" ${!familiaActual ? 'disabled' : ''}>
+                        <select id="select-${producto.id}" class="border rounded p-1 ml-2">
                             ${Array.from({length: producto.cantidad + 1}, (_, i) => i).map(n => `<option value="${n}">${n}</option>`).join('')}
                         </select>
                     `;
@@ -179,11 +179,6 @@
         }
 
         async function moverAlCarro() {
-            if (!familiaActual) {
-                alert('Debe seleccionar una familia antes de mover productos al carro.');
-                return;
-            }
-
             const productosSeleccionados = Array.from(document.querySelectorAll('#productos-almacen select'))
                 .map(select => ({
                     id: select.id.split('-')[1],
@@ -191,11 +186,17 @@
                 }))
                 .filter(p => p.cantidad > 0);
 
-            for (const producto of productosSeleccionados) {
-                await callApi('moverProducto', { id: producto.id, cantidad: producto.cantidad });
+            if (productosSeleccionados.length === 0) {
+                alert('Por favor, seleccione al menos un producto para mover al carro.');
+                return;
             }
 
-            await updateAll();
+            const result = await callApi('moverProductosAlCarro', { productos: JSON.stringify(productosSeleccionados) });
+            if (result.success) {
+                await updateAll();
+            } else {
+                alert(result.error || 'No se pudieron mover los productos al carro.');
+            }
         }
 
         async function updateCarro() {
@@ -216,8 +217,12 @@
         }
 
         async function devolverProducto(id, cantidad) {
-            await callApi('moverProducto', { id, cantidad: -cantidad });
-            await updateAll();
+            const result = await callApi('devolverProducto', { id, cantidad });
+            if (result.success) {
+                await updateAll();
+            } else {
+                alert(result.error || 'No se pudo devolver el producto.');
+            }
         }
 
         async function confirmarCooperacion() {
@@ -266,7 +271,13 @@
 
         updateAll();
         loadFamilias();
-        setInterval(updateAll, 2000); // Actualiza cada 2 segundos
+        setInterval(() => {
+            if (!familiaActual) {
+                updateResumen();
+                checkAlmacenStatus();
+                updateBodegaSolidaria();
+            }
+        }, 2000);
     </script>
 </body>
 </html>
