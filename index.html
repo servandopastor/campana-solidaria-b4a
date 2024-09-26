@@ -145,9 +145,8 @@ async function callApi(action, params = {}) {
 async function loadProductos() {
     console.log("Iniciando carga de productos...");
     const productos = await callApi('getProductos');
-    console.log("Respuesta completa de getProductos:", productos);
+    console.log("Respuesta de getProductos:", productos);
     if (productos.success && productos.datos && productos.datos.length > 0) {
-        console.log("Productos recibidos:", productos.datos);
         const container = document.getElementById('productos-almacen');
         container.innerHTML = '';
         productos.datos.forEach(producto => {
@@ -156,10 +155,15 @@ async function loadProductos() {
             div.className = 'flex justify-between items-center mb-2';
             div.innerHTML = `
                 <span>${producto.nombre} (Disponible: ${producto.cantidad})</span>
-                <select onchange="moverProducto('${producto.id}', this.value)" class="border rounded p-1">
-                    <option value="">Seleccionar</option>
-                    ${Array.from({length: producto.cantidad}, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
-                </select>
+                <div class="flex items-center">
+                    <button onclick="moverProducto('${producto.id}', -1)" class="bg-red-500 text-white px-2 py-1 rounded mr-2">-</button>
+                    <span id="cantidad-${producto.id}">0</span>
+                    <button onclick="moverProducto('${producto.id}', 1)" class="bg-green-500 text-white px-2 py-1 rounded ml-2">+</button>
+                    <select onchange="moverProductoSelect('${producto.id}', this.value)" class="border rounded p-1 ml-2">
+                        <option value="">Seleccionar</option>
+                        ${Array.from({length: producto.cantidad}, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
+                    </select>
+                </div>
             `;
             container.appendChild(div);
         });
@@ -171,16 +175,24 @@ async function loadProductos() {
     }
 }
 
-        async function moverProducto(id, cantidad) {
-            if (!cantidad) return;
-            const result = await callApi('moverProducto', { id, cantidad: parseInt(cantidad) });
-            if (result.success) {
-                await loadProductos();
-                updateCarro();
-            } else {
-                alert(result.error || 'No se pudo mover el producto.');
-            }
-        }
+async function moverProducto(id, cantidad) {
+    const result = await callApi('moverProducto', { id, cantidad: parseInt(cantidad) });
+    if (result.success) {
+        const spanCantidad = document.getElementById(`cantidad-${id}`);
+        let cantidadActual = parseInt(spanCantidad.textContent);
+        spanCantidad.textContent = cantidadActual + parseInt(cantidad);
+        updateCarro();
+    } else {
+        alert(result.error || 'No se pudo mover el producto.');
+    }
+}
+
+async function moverProductoSelect(id, cantidad) {
+    if (!cantidad) return;
+    const cantidadActual = parseInt(document.getElementById(`cantidad-${id}`).textContent);
+    const cantidadAMover = parseInt(cantidad) - cantidadActual;
+    await moverProducto(id, cantidadAMover);
+}
 
         async function updateCarro() {
             const carro = await callApi('getCarro');
