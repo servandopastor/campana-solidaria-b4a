@@ -14,6 +14,7 @@
         <div id="sala-espera">
             <div class="section bg-white p-3 rounded shadow mb-4">
                 <h2 id="resumen" class="text-xl font-semibold mb-3">Resumen</h2>
+                <p class="text-sm mb-2">Este resumen muestra el progreso de la campaña.</p>
                 <div class="space-y-2">
                     <div class="flex justify-between">
                         <span class="font-medium">Productos Comprometidos:</span>
@@ -27,7 +28,8 @@
             </div>
 
             <div class="section bg-white p-3 rounded shadow mb-4">
-                <h2 id="fila-de-espera-para-entrar-al-almacén" class="text-xl font-semibold mb-3">Fila de Espera para Entrar al Almacén</h2>
+                <h2 id="zona-de-espera" class="text-xl font-semibold mb-3">Zona de espera para entrar al Almacén Solidario</h2>
+                <p class="text-sm mb-2">Seleccione su familia y espere su turno para entrar al almacén.</p>
                 <div id="mensaje-espera" class="mb-3 text-blue-600">
                     El almacén está libre. Por favor, seleccione su familia para entrar.
                 </div>
@@ -43,22 +45,23 @@
         <div id="almacen" class="hidden space-y-6">
             <div class="bg-white p-4 rounded shadow">
                 <h2 class="text-xl font-semibold mb-3">Almacén</h2>
+                <p class="text-sm mb-2">Seleccione la cantidad de productos que desea comprometer.</p>
                 <div id="productos-almacen" class="space-y-2"></div>
                 <button id="mover-al-carro" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mt-4">Mover al Carro</button>
             </div>
 
             <div class="bg-white p-4 rounded shadow">
                 <h2 class="text-xl font-semibold mb-3">Carro</h2>
+                <p class="text-sm mb-2">Revise los productos seleccionados antes de confirmar.</p>
                 <p id="familia-actual" class="mb-2 font-medium"></p>
                 <div id="carro-items" class="space-y-2 mb-4"></div>
                 <button id="confirmar-cooperacion" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">Confirmar Cooperación</button>
             </div>
-
-            <button id="volver-sala-espera" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Volver a Sala de Espera</button>
         </div>
 
         <div id="bodega-solidaria" class="mt-8">
             <h2 class="text-xl font-semibold mb-3">Bodega Solidaria</h2>
+            <p class="text-sm mb-2">Aquí se muestran las cooperaciones confirmadas.</p>
             <table class="w-full border-collapse border border-gray-300">
                 <thead>
                     <tr class="bg-gray-100">
@@ -70,10 +73,12 @@
                 <tbody id="bodega-lista"></tbody>
             </table>
         </div>
+
+        <button id="volver-sala-espera" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Volver a Sala de Espera</button>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxJIa6GNSVH14IcCBm4iyUpg4wrMsrHePBxn3UnFuth8dunHCQj4VkPdm6S1MKM99S49A/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwClmzbPHWGioppI-YnRTcKru-b-9MT1XNNdH_nOjBwVLFuyefMcphvttU1kK1Wriywiw/exec';
         let familiaActual = '';
 
         async function callApi(action, params = {}) {
@@ -249,7 +254,11 @@
         loadFamilias();
         checkAlmacenStatus();
         updateBodegaSolidaria();
-        setInterval(checkAlmacenStatus, 30000);
+        setInterval(() => {
+            updateResumen();
+            checkAlmacenStatus();
+            updateBodegaSolidaria();
+        }, 5000); // Actualiza cada 5 segundos
     </script>
 </body>
 </html>
