@@ -122,56 +122,59 @@
             }
         }
 
-        async function entrarAlmacen() {
-            const familiaSelect = document.getElementById('familia-select');
-            familiaActual = familiaSelect.options[familiaSelect.selectedIndex].text;
-            const familiaId = familiaSelect.value;
-            if (!familiaId) {
-                alert('Por favor, seleccione una familia.');
-                return;
-            }
-            const result = await callApi('entrarAlAlmacen', { familiaId });
-            if (result.success) {
-                document.getElementById('sala-espera').classList.add('hidden');
-                document.getElementById('almacen').classList.remove('hidden');
-                document.getElementById('familia-actual').textContent = `Familia: ${familiaActual}`;
-                loadProductos();
-                updateCarro();
-            } else {
-                alert(result.error || 'No se pudo entrar al almacén.');
-            }
-        }
+async function entrarAlmacen() {
+    const familiaSelect = document.getElementById('familia-select');
+    familiaActual = familiaSelect.options[familiaSelect.selectedIndex].text;
+    const familiaId = familiaSelect.value;
+    if (!familiaId) {
+        alert('Por favor, seleccione una familia.');
+        return;
+    }
+    const result = await callApi('entrarAlAlmacen', { familiaId });
+    if (result.success) {
+        document.getElementById('sala-espera').classList.add('hidden');
+        document.getElementById('almacen').classList.remove('hidden');
+        document.getElementById('familia-actual').textContent = `Familia: ${familiaActual}`;
+        await loadProductos(); // Asegúrate de que esto se ejecute
+        updateCarro();
+    } else {
+        alert(result.error || 'No se pudo entrar al almacén.');
+    }
+}
 
-        async function loadProductos() {
-            const productos = await callApi('getProductos');
-            if (productos.success) {
-                const container = document.getElementById('productos-almacen');
-                container.innerHTML = '';
-                productos.datos.forEach(producto => {
-                    const div = document.createElement('div');
-                    div.className = 'flex justify-between items-center mb-2';
-                    div.innerHTML = `
-                        <span>${producto.nombre} (Disponible: ${producto.cantidad})</span>
-                        <select onchange="moverProducto('${producto.id}', this.value)" class="border rounded p-1">
-                            <option value="">Seleccionar</option>
-                            ${Array.from({length: producto.cantidad}, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
-                        </select>
-                    `;
-                    container.appendChild(div);
-                });
-            }
-        }
+async function loadProductos() {
+    const productos = await callApi('getProductos');
+    if (productos.success) {
+        const container = document.getElementById('productos-almacen');
+        container.innerHTML = '';
+        productos.datos.forEach(producto => {
+            const div = document.createElement('div');
+            div.className = 'flex justify-between items-center mb-2';
+            div.innerHTML = `
+                <span>${producto.nombre} (Disponible: ${producto.cantidad})</span>
+                <select onchange="moverProducto('${producto.id}', this.value)" class="border rounded p-1">
+                    <option value="">Seleccionar</option>
+                    ${Array.from({length: producto.cantidad}, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
+                </select>
+            `;
+            container.appendChild(div);
+        });
+    } else {
+        console.error('Error al cargar productos:', productos.error);
+        alert('No se pudieron cargar los productos. Por favor, intente nuevamente.');
+    }
+}
 
-        async function moverProducto(id, cantidad) {
-            if (!cantidad) return;
-            const result = await callApi('moverProducto', { id, cantidad: parseInt(cantidad) });
-            if (result.success) {
-                loadProductos();
-                updateCarro();
-            } else {
-                alert(result.error || 'No se pudo mover el producto.');
-            }
-        }
+async function moverProducto(id, cantidad) {
+    if (!cantidad) return;
+    const result = await callApi('moverProducto', { id, cantidad: parseInt(cantidad) });
+    if (result.success) {
+        await loadProductos(); // Recargar productos después de mover
+        updateCarro();
+    } else {
+        alert(result.error || 'No se pudo mover el producto.');
+    }
+}
 
         async function updateCarro() {
             const carro = await callApi('getCarro');
