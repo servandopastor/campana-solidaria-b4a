@@ -81,7 +81,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbx42J3x6vdAg9FX575P5SyzIEscnGM7rQoRwgsN252p89CjuYP4-tdnybhz3dku4AwOEA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbySL3I5NMnOwhIBIwxKhiFQX5RAxelKAQdD-6iSjMS55-W9YaZii7G_UKUImEw3HYAH8A/exec';
         let familiaActual = '';
 
         async function callApi(action, params = {}) {
@@ -130,11 +130,15 @@
 
         async function checkAlmacenStatus() {
             const status = await callApi('verificarAlmacenOcupado');
+            console.log('Estado del almacén:', status);
             if (status.success) {
-                document.getElementById('mensaje-espera').textContent = status.ocupado
+                const mensaje = status.ocupado
                     ? 'El almacén está ocupado. Por favor, espere su turno.'
                     : 'El almacén está libre. Por favor, seleccione su familia para entrar.';
+                document.getElementById('mensaje-espera').textContent = mensaje;
                 document.getElementById('entrar-almacen').disabled = status.ocupado;
+            } else {
+                console.error('Error al verificar el estado del almacén:', status.error);
             }
         }
 
@@ -220,12 +224,7 @@
             const result = await callApi('confirmarCooperacion');
             if (result.success) {
                 alert('Cooperación confirmada. ¡Gracias por su ayuda solidaria!');
-                document.getElementById('carro-items').innerHTML = '';
-                document.getElementById('familia-actual').textContent = '';
-                familiaActual = '';
-                document.getElementById('almacen').classList.add('hidden');
-                document.getElementById('sala-espera').classList.remove('hidden');
-                await updateAll();
+                await salirAlmacen();
             } else {
                 alert(result.error || 'No se pudo confirmar la cooperación.');
             }
@@ -236,12 +235,7 @@
                 const result = await callApi('devolverProductos');
                 if (result.success) {
                     alert('Productos devueltos exitosamente. Volviendo a la sala de espera.');
-                    document.getElementById('carro-items').innerHTML = '';
-                    document.getElementById('familia-actual').textContent = '';
-                    familiaActual = '';
-                    document.getElementById('almacen').classList.add('hidden');
-                    document.getElementById('sala-espera').classList.remove('hidden');
-                    await updateAll();
+                    await salirAlmacen();
                 } else {
                     alert(result.error || 'No se pudieron devolver los productos.');
                 }
@@ -265,6 +259,17 @@
             }
         }
 
+        async function salirAlmacen() {
+            await callApi('salirDelAlmacen');
+            document.getElementById('almacen').classList.add('hidden');
+            document.getElementById('sala-espera').classList.remove('hidden');
+            familiaActual = '';
+            document.getElementById('familia-actual').textContent = '';
+            await updateAll();
+        }
+
+
+        
         async function volverSalaEspera() {
             await callApi('salirDelAlmacen');
             document.getElementById('almacen').classList.add('hidden');
