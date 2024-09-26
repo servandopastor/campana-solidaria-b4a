@@ -9,9 +9,7 @@
 </head>
 <body class="bg-gray-100">
     <div class="max-w-3xl mx-auto space-y-6 p-4">
-        <h1 id="campaña-solidaria-b4a" class="text-2xl font-bold text-center mb-2">Campaña Solidaria B4A</h1>
-        <p class="text-sm text-center mb-2">Siga las instrucciones en cada sección para participar en la campaña.</p>
-        <p class="text-sm text-center font-bold text-red-600 mb-4">Considere que hay un tiempo de actualización después de cada acción</p>
+        <h1 id="campaña-solidaria-b4a" class="text-2xl font-bold text-center mb-6">Campaña Solidaria B4A</h1>
 
         <div id="sala-espera">
             <div class="section bg-white p-3 rounded shadow mb-4">
@@ -59,8 +57,6 @@
                 <div id="carro-items" class="space-y-2 mb-4"></div>
                 <button id="confirmar-cooperacion" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">Confirmar Cooperación</button>
             </div>
-
-            <button id="volver-sala-espera" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Volver a Sala de Espera</button>
         </div>
 
         <div id="bodega-solidaria" class="mt-8">
@@ -77,6 +73,8 @@
                 <tbody id="bodega-lista"></tbody>
             </table>
         </div>
+
+        <button id="volver-sala-espera" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Volver a Sala de Espera</button>
     </div>
 
     <script>
@@ -163,7 +161,7 @@
                     div.className = 'flex justify-between items-center mb-2';
                     div.innerHTML = `
                         <span>${producto.nombre}</span>
-                        <select id="select-${producto.id}" class="border rounded p-1 ml-2" ${!familiaActual ? 'disabled' : ''}>
+                        <select id="select-${producto.id}" class="border rounded p-1 ml-2">
                             ${Array.from({length: producto.cantidad + 1}, (_, i) => i).map(n => `<option value="${n}">${n}</option>`).join('')}
                         </select>
                     `;
@@ -178,11 +176,6 @@
         }
 
         async function moverAlCarro() {
-            if (!familiaActual) {
-                alert('Debe seleccionar una familia antes de mover productos al carro.');
-                return;
-            }
-
             const productosSeleccionados = Array.from(document.querySelectorAll('#productos-almacen select')).map(select => ({
                 id: select.id.split('-')[1],
                 cantidad: parseInt(select.value)
@@ -265,7 +258,7 @@
             updateResumen();
             checkAlmacenStatus();
             updateBodegaSolidaria();
-        }, 2000); // Actualiza cada 2 segundos
+        }, 5000); // Actualiza cada 5 segundos
     </script>
 </body>
 </html>
