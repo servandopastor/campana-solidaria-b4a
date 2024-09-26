@@ -76,17 +76,17 @@
         const API_URL = 'https://script.google.com/macros/s/AKfycbwOZ8bjav5_BT1JtGLl-TSg_zOrUmlEnMsg5DLundJMg5uEvKzrk1H-VEtFEGcb2_xVLw/exec';
         let familiaActual = '';
 
-        async function callApi(action, params = {}) {
-            try {
-                console.log(`Llamando a la API: ${action}`, params);
-                const response = await axios.get(API_URL, { params: { action, ...params } });
-                console.log(`Respuesta de la API para ${action}:`, response.data);
-                return response.data;
-            } catch (error) {
-                console.error(`Error llamando a la API (${action}):`, error);
-                return { success: false, error: error.message };
-            }
-        }
+async function callApi(action, params = {}) {
+    try {
+        console.log(`Llamando a la API: ${action}`, params);
+        const response = await axios.get(API_URL, { params: { action, ...params } });
+        console.log(`Respuesta completa de la API para ${action}:`, response);
+        return response.data;
+    } catch (error) {
+        console.error(`Error llamando a la API (${action}):`, error);
+        return { success: false, error: error.message };
+    }
+}
 
         async function updateResumen() {
             const resumen = await callApi('getResumen');
@@ -142,33 +142,34 @@
             }
         }
 
-        async function loadProductos() {
-            console.log("Iniciando carga de productos...");
-            const productos = await callApi('getProductos');
-            console.log("Respuesta de getProductos:", productos);
-            if (productos.success && productos.datos && productos.datos.length > 0) {
-                const container = document.getElementById('productos-almacen');
-                container.innerHTML = '';
-                productos.datos.forEach(producto => {
-                    console.log("Procesando producto:", producto);
-                    const div = document.createElement('div');
-                    div.className = 'flex justify-between items-center mb-2';
-                    div.innerHTML = `
-                        <span>${producto.nombre} (Disponible: ${producto.cantidad})</span>
-                        <select onchange="moverProducto('${producto.id}', this.value)" class="border rounded p-1">
-                            <option value="">Seleccionar</option>
-                            ${Array.from({length: producto.cantidad}, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
-                        </select>
-                    `;
-                    container.appendChild(div);
-                });
-                console.log("Productos cargados exitosamente.");
-            } else {
-                console.error('Error al cargar productos o no hay productos disponibles:', productos.error || 'No hay productos');
-                const container = document.getElementById('productos-almacen');
-                container.innerHTML = '<p class="text-red-500">No se pudieron cargar los productos o no hay productos disponibles.</p>';
-            }
-        }
+async function loadProductos() {
+    console.log("Iniciando carga de productos...");
+    const productos = await callApi('getProductos');
+    console.log("Respuesta completa de getProductos:", productos);
+    if (productos.success && productos.datos && productos.datos.length > 0) {
+        console.log("Productos recibidos:", productos.datos);
+        const container = document.getElementById('productos-almacen');
+        container.innerHTML = '';
+        productos.datos.forEach(producto => {
+            console.log("Procesando producto:", producto);
+            const div = document.createElement('div');
+            div.className = 'flex justify-between items-center mb-2';
+            div.innerHTML = `
+                <span>${producto.nombre} (Disponible: ${producto.cantidad})</span>
+                <select onchange="moverProducto('${producto.id}', this.value)" class="border rounded p-1">
+                    <option value="">Seleccionar</option>
+                    ${Array.from({length: producto.cantidad}, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
+                </select>
+            `;
+            container.appendChild(div);
+        });
+        console.log("Productos cargados exitosamente.");
+    } else {
+        console.error('Error al cargar productos o no hay productos disponibles:', productos.error || 'No hay productos');
+        const container = document.getElementById('productos-almacen');
+        container.innerHTML = '<p class="text-red-500">No se pudieron cargar los productos o no hay productos disponibles.</p>';
+    }
+}
 
         async function moverProducto(id, cantidad) {
             if (!cantidad) return;
