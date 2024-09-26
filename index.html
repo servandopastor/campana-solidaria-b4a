@@ -43,8 +43,8 @@
         <div id="almacen" class="hidden space-y-6">
             <div class="bg-white p-4 rounded shadow">
                 <h2 class="text-xl font-semibold mb-3">Almacén</h2>
-                <button onclick="loadProductos()" class="bg-blue-500 text-white px-4 py-2 rounded mb-4">Recargar Productos</button>
                 <div id="productos-almacen" class="space-y-2"></div>
+                <button id="mover-al-carro" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mt-4">Mover al Carro</button>
             </div>
 
             <div class="bg-white p-4 rounded shadow">
@@ -62,9 +62,9 @@
             <table class="w-full border-collapse border border-gray-300">
                 <thead>
                     <tr class="bg-gray-100">
+                        <th class="border border-gray-300 p-2">Familia</th>
                         <th class="border border-gray-300 p-2">Producto</th>
                         <th class="border border-gray-300 p-2">Cantidad</th>
-                        <th class="border border-gray-300 p-2">Familias</th>
                     </tr>
                 </thead>
                 <tbody id="bodega-lista"></tbody>
@@ -155,16 +155,10 @@
                     const div = document.createElement('div');
                     div.className = 'flex justify-between items-center mb-2';
                     div.innerHTML = `
-                        <span>${producto.nombre} (Disponible: ${producto.cantidad})</span>
-                        <div class="flex items-center">
-                            <button onclick="moverProducto('${producto.id}', -1)" class="bg-red-500 text-white px-2 py-1 rounded mr-2">-</button>
-                            <span id="cantidad-${producto.id}">0</span>
-                            <button onclick="moverProducto('${producto.id}', 1)" class="bg-green-500 text-white px-2 py-1 rounded ml-2">+</button>
-                            <select onchange="moverProductoSelect('${producto.id}', this.value)" class="border rounded p-1 ml-2">
-                                <option value="">Seleccionar</option>
-                                ${Array.from({length: producto.cantidad}, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
-                            </select>
-                        </div>
+                        <span>${producto.nombre}</span>
+                        <select id="select-${producto.id}" class="border rounded p-1 ml-2">
+                            ${Array.from({length: producto.cantidad + 1}, (_, i) => i).map(n => `<option value="${n}">${n}</option>`).join('')}
+                        </select>
                     `;
                     container.appendChild(div);
                 });
@@ -176,24 +170,18 @@
             }
         }
 
-        async function moverProducto(id, cantidad) {
-            console.log(`Moviendo producto: ${id}, cantidad: ${cantidad}`);
-            const result = await callApi('moverProducto', { id, cantidad: parseInt(cantidad) });
-            if (result.success) {
-                const spanCantidad = document.getElementById(`cantidad-${id}`);
-                let cantidadActual = parseInt(spanCantidad.textContent);
-                spanCantidad.textContent = cantidadActual + parseInt(cantidad);
-                updateCarro();
-            } else {
-                alert(result.error || 'No se pudo mover el producto.');
-            }
-        }
+        async function moverAlCarro() {
+            const productosSeleccionados = Array.from(document.querySelectorAll('#productos-almacen select')).map(select => ({
+                id: select.id.split('-')[1],
+                cantidad: parseInt(select.value)
+            })).filter(p => p.cantidad > 0);
 
-        async function moverProductoSelect(id, cantidad) {
-            if (!cantidad) return;
-            const cantidadActual = parseInt(document.getElementById(`cantidad-${id}`).textContent);
-            const cantidadAMover = parseInt(cantidad) - cantidadActual;
-            await moverProducto(id, cantidadAMover);
+            for (const producto of productosSeleccionados) {
+                await callApi('moverProducto', { id: producto.id, cantidad: producto.cantidad });
+            }
+
+            await loadProductos();
+            await updateCarro();
         }
 
         async function updateCarro() {
@@ -206,25 +194,23 @@
                     div.className = 'flex justify-between items-center';
                     div.innerHTML = `
                         <span>${item.nombre}: ${item.cantidad}</span>
-                        <button onclick="devolverProducto('${item.id}')" class="bg-red-500 text-white px-2 py-1 rounded">-</button>
                     `;
                     container.appendChild(div);
                 });
             }
         }
 
-        async function devolverProducto(id) {
-            await moverProducto(id, -1);
-        }
-
         async function confirmarCooperacion() {
             const result = await callApi('confirmarCooperacion');
             if (result.success) {
                 alert('Cooperación confirmada. ¡Gracias por su ayuda!');
-                updateCarro();
-                updateBodegaSolidaria();
-                checkAlmacenStatus();
-                updateResumen();
+                document.getElementById('carro-items').innerHTML = '';
+                document.getElementById('familia-actual').textContent = '';
+                familiaActual = '';
+                await updateBodegaSolidaria();
+                await checkAlmacenStatus();
+                await updateResumen();
+                await loadProductos();
             } else {
                 alert(result.error || 'No se pudo confirmar la cooperación.');
             }
@@ -238,9 +224,9 @@
                 bodega.datos.forEach(item => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
+                        <td class="border border-gray-300 p-2">${item.familia}</td>
                         <td class="border border-gray-300 p-2">${item.producto}</td>
                         <td class="border border-gray-300 p-2">${item.cantidad}</td>
-                        <td class="border border-gray-300 p-2">${item.familias.join(', ')}</td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -255,6 +241,7 @@
         }
 
         document.getElementById('entrar-almacen').addEventListener('click', entrarAlmacen);
+        document.getElementById('mover-al-carro').addEventListener('click', moverAlCarro);
         document.getElementById('confirmar-cooperacion').addEventListener('click', confirmarCooperacion);
         document.getElementById('volver-sala-espera').addEventListener('click', volverSalaEspera);
 
