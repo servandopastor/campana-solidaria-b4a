@@ -38,16 +38,12 @@
                     <button id="entrar-almacen" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Entrar al Almacén</button>
                 </div>
             </div>
-
-            <div class="section bg-white p-3 rounded shadow">
-                <h2 id="familias-pendientes" class="text-xl font-semibold mb-3">Familias Pendientes</h2>
-                <ul id="familias-pendientes-lista" class="space-y-1 text-sm"></ul>
-            </div>
         </div>
 
-<div id="almacen" class="hidden space-y-6">
+        <div id="almacen" class="hidden space-y-6">
             <div class="bg-white p-4 rounded shadow">
                 <h2 class="text-xl font-semibold mb-3">Almacén</h2>
+                <button onclick="loadProductos()" class="bg-blue-500 text-white px-4 py-2 rounded mb-4">Recargar Productos</button>
                 <div id="productos-almacen" class="space-y-2"></div>
             </div>
 
@@ -82,10 +78,12 @@
 
         async function callApi(action, params = {}) {
             try {
+                console.log(`Llamando a la API: ${action}`, params);
                 const response = await axios.get(API_URL, { params: { action, ...params } });
+                console.log(`Respuesta de la API para ${action}:`, response.data);
                 return response.data;
             } catch (error) {
-                console.error('Error calling API:', error);
+                console.error(`Error llamando a la API (${action}):`, error);
                 return { success: false, error: error.message };
             }
         }
@@ -122,59 +120,66 @@
             }
         }
 
-async function entrarAlmacen() {
-    const familiaSelect = document.getElementById('familia-select');
-    familiaActual = familiaSelect.options[familiaSelect.selectedIndex].text;
-    const familiaId = familiaSelect.value;
-    if (!familiaId) {
-        alert('Por favor, seleccione una familia.');
-        return;
-    }
-    const result = await callApi('entrarAlAlmacen', { familiaId });
-    if (result.success) {
-        document.getElementById('sala-espera').classList.add('hidden');
-        document.getElementById('almacen').classList.remove('hidden');
-        document.getElementById('familia-actual').textContent = `Familia: ${familiaActual}`;
-        await loadProductos(); // Asegúrate de que esto se ejecute
-        updateCarro();
-    } else {
-        alert(result.error || 'No se pudo entrar al almacén.');
-    }
-}
+        async function entrarAlmacen() {
+            console.log("Iniciando entrada al almacén...");
+            const familiaSelect = document.getElementById('familia-select');
+            familiaActual = familiaSelect.options[familiaSelect.selectedIndex].text;
+            const familiaId = familiaSelect.value;
+            if (!familiaId) {
+                alert('Por favor, seleccione una familia.');
+                return;
+            }
+            const result = await callApi('entrarAlAlmacen', { familiaId });
+            console.log("Resultado de entrarAlAlmacen:", result);
+            if (result.success) {
+                document.getElementById('sala-espera').classList.add('hidden');
+                document.getElementById('almacen').classList.remove('hidden');
+                document.getElementById('familia-actual').textContent = `Familia: ${familiaActual}`;
+                await loadProductos();
+                updateCarro();
+            } else {
+                alert(result.error || 'No se pudo entrar al almacén.');
+            }
+        }
 
-async function loadProductos() {
-    const productos = await callApi('getProductos');
-    if (productos.success) {
-        const container = document.getElementById('productos-almacen');
-        container.innerHTML = '';
-        productos.datos.forEach(producto => {
-            const div = document.createElement('div');
-            div.className = 'flex justify-between items-center mb-2';
-            div.innerHTML = `
-                <span>${producto.nombre} (Disponible: ${producto.cantidad})</span>
-                <select onchange="moverProducto('${producto.id}', this.value)" class="border rounded p-1">
-                    <option value="">Seleccionar</option>
-                    ${Array.from({length: producto.cantidad}, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
-                </select>
-            `;
-            container.appendChild(div);
-        });
-    } else {
-        console.error('Error al cargar productos:', productos.error);
-        alert('No se pudieron cargar los productos. Por favor, intente nuevamente.');
-    }
-}
+        async function loadProductos() {
+            console.log("Iniciando carga de productos...");
+            const productos = await callApi('getProductos');
+            console.log("Respuesta de getProductos:", productos);
+            if (productos.success && productos.datos && productos.datos.length > 0) {
+                const container = document.getElementById('productos-almacen');
+                container.innerHTML = '';
+                productos.datos.forEach(producto => {
+                    console.log("Procesando producto:", producto);
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center mb-2';
+                    div.innerHTML = `
+                        <span>${producto.nombre} (Disponible: ${producto.cantidad})</span>
+                        <select onchange="moverProducto('${producto.id}', this.value)" class="border rounded p-1">
+                            <option value="">Seleccionar</option>
+                            ${Array.from({length: producto.cantidad}, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('')}
+                        </select>
+                    `;
+                    container.appendChild(div);
+                });
+                console.log("Productos cargados exitosamente.");
+            } else {
+                console.error('Error al cargar productos o no hay productos disponibles:', productos.error || 'No hay productos');
+                const container = document.getElementById('productos-almacen');
+                container.innerHTML = '<p class="text-red-500">No se pudieron cargar los productos o no hay productos disponibles.</p>';
+            }
+        }
 
-async function moverProducto(id, cantidad) {
-    if (!cantidad) return;
-    const result = await callApi('moverProducto', { id, cantidad: parseInt(cantidad) });
-    if (result.success) {
-        await loadProductos(); // Recargar productos después de mover
-        updateCarro();
-    } else {
-        alert(result.error || 'No se pudo mover el producto.');
-    }
-}
+        async function moverProducto(id, cantidad) {
+            if (!cantidad) return;
+            const result = await callApi('moverProducto', { id, cantidad: parseInt(cantidad) });
+            if (result.success) {
+                await loadProductos();
+                updateCarro();
+            } else {
+                alert(result.error || 'No se pudo mover el producto.');
+            }
+        }
 
         async function updateCarro() {
             const carro = await callApi('getCarro');
@@ -196,7 +201,7 @@ async function moverProducto(id, cantidad) {
         async function devolverProducto(id) {
             const result = await callApi('moverProducto', { id, cantidad: -1 });
             if (result.success) {
-                loadProductos();
+                await loadProductos();
                 updateCarro();
             } else {
                 alert(result.error || 'No se pudo devolver el producto.');
