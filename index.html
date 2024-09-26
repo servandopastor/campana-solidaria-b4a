@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campaña Solidaria B4A</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body class="bg-gray-100">
     <div class="max-w-3xl mx-auto space-y-6 p-4">
@@ -26,99 +27,177 @@
             </div>
 
             <div class="section bg-white p-3 rounded shadow mb-4">
-                <h2 class="text-xl font-semibold mb-3">Fila de Espera para Entrar al Almacén</h2>
+                <h2 id="fila-de-espera-para-entrar-al-almacén" class="text-xl font-semibold mb-3">Fila de Espera para Entrar al Almacén</h2>
                 <div id="mensaje-espera" class="mb-3 text-blue-600">
                     El almacén está libre. Por favor, seleccione su familia para entrar.
                 </div>
-                <div id="entrada-almacen">
-                    <select id="select-familia" class="border p-2 rounded text-sm mb-2">
+                <div id="entrada-almacen" class="space-y-2">
+                    <select id="familia-select" class="w-full p-2 border rounded">
                         <option value="">Selecciona tu Familia</option>
                     </select>
-                    <button id="entrar-almacen" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Entrar al Almacén</button>
+                    <button id="entrar-almacen" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Entrar al Almacén</button>
                 </div>
             </div>
 
             <div class="section bg-white p-3 rounded shadow">
                 <h2 id="familias-pendientes" class="text-xl font-semibold mb-3">Familias Pendientes</h2>
-                <div id="familias-pendientes-lista" class="space-y-1 text-sm"></div>
+                <ul id="familias-pendientes-lista" class="space-y-1 text-sm"></ul>
             </div>
         </div>
 
         <div id="almacen" class="hidden">
             <div class="section bg-white p-3 rounded shadow mb-4">
-                <h2 class="text-xl font-semibold mb-3">Almacén</h2>
+                <h2 id="almacén" class="text-xl font-semibold mb-3">Almacén</h2>
                 <div id="productos-almacen" class="space-y-2"></div>
             </div>
 
             <div class="section bg-white p-3 rounded shadow mb-4">
-                <h2 class="text-xl font-semibold mb-3">Carro</h2>
+                <h2 id="carro" class="text-xl font-semibold mb-3">Carro</h2>
                 <div id="carro-items" class="space-y-2"></div>
-                <button id="confirmar-cooperacion" class="mt-4 bg-green-500 text-white px-3 py-1 rounded text-sm">Confirmar Cooperación</button>
-            </div>
-
-            <div class="section bg-white p-3 rounded shadow">
-                <h2 id="bodega-solidaria" class="text-xl font-semibold mb-3">Bodega Solidaria</h2>
-                <p class="text-sm text-gray-600 mb-2">
-                    Aquí se muestran los productos donados y las familias que han cooperado.
-                </p>
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr>
-                            <th class="text-left">Producto</th>
-                            <th class="text-left">Cantidad</th>
-                            <th class="text-left">Familia</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bodega-items"></tbody>
-                </table>
+                <button id="confirmar-cooperacion" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 mt-4">Confirmar Cooperación</button>
             </div>
         </div>
     </div>
 
-<script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlQqU4OJPaSf4AYifRXWbyl-5WPO6sxjd8qveJGiXX6m2pgellzbrrHlWAsNyeqPTaBg/exec'; // Inserta la URL del Google Apps Script aquí
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzYtUR4ZTVmrgR5zLDzeEJ2wW3ZAJ0HEhf1icsD_GrHWXyvw3c-RQmvTaRC53qKNaOYvw/exec';
 
-async function fetchData(action, params = {}) {
-    try {
-        const url = new URL(SCRIPT_URL);
-        url.searchParams.append('action', action);
-        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-        
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        // Función para hacer llamadas a la API
+        async function callApi(action, params = {}) {
+            try {
+                const response = await axios.get(API_URL, {
+                    params: { action, ...params }
+                });
+                return response.data;
+            } catch (error) {
+                console.error('Error calling API:', error);
+                return { success: false, error: error.message };
+            }
         }
-        return await response.json();
-    } catch (error) {
-        console.error("Error fetching data:", error);
-        return { success: false, error: error.message };
-    }
-}
 
-async function updateFamilias() {
-    const familias = await fetchData('getFamilias');
-    
-    console.log(familias);  // Verifica si los datos se reciben correctamente
-    
-    const selectFamilia = document.getElementById('select-familia');
-    selectFamilia.innerHTML = '<option value="">Selecciona tu Familia</option>';
-    
-    if (familias.success && familias.datos.length > 0) {
-        familias.datos.forEach(familia => {
-            const option = document.createElement('option');
-            option.value = familia[0];  // Asume que la columna 0 es el ID de la familia
-            option.textContent = familia[1];  // Asume que la columna 1 es el nombre de la familia
-            selectFamilia.appendChild(option);
-        });
-    } else {
-        console.error("Error al cargar las familias:", familias.error);
-    }
-}
+        // Función para actualizar el resumen
+        async function updateResumen() {
+            const resumen = await callApi('getResumen');
+            if (resumen.success) {
+                document.getElementById('porcentaje-productos').textContent = resumen.productosComprometidos + '%';
+                document.getElementById('porcentaje-familias').textContent = resumen.familiasComprometidas + '%';
+            }
+        }
 
-window.onload = async function() {
-    initPage();
-    await updateFamilias();  // Cargar las familias cuando la página carga
-};
-</script>
+        // Función para cargar las familias
+        async function loadFamilias() {
+            const familias = await callApi('getFamilias');
+            if (familias.success) {
+                const select = document.getElementById('familia-select');
+                select.innerHTML = '<option value="">Selecciona tu Familia</option>';
+                familias.datos.forEach(familia => {
+                    const option = document.createElement('option');
+                    option.value = familia[0];
+                    option.textContent = familia[1];
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        // Función para verificar el estado del almacén
+        async function checkAlmacenStatus() {
+            const status = await callApi('verificarAlmacenOcupado');
+            if (status.success) {
+                document.getElementById('mensaje-espera').textContent = status.ocupado
+                    ? 'El almacén está ocupado. Por favor, espere su turno.'
+                    : 'El almacén está libre. Por favor, seleccione su familia para entrar.';
+                document.getElementById('entrar-almacen').disabled = status.ocupado;
+            }
+        }
+
+        // Función para entrar al almacén
+        async function entrarAlmacen() {
+            const familiaId = document.getElementById('familia-select').value;
+            if (!familiaId) {
+                alert('Por favor, seleccione una familia.');
+                return;
+            }
+            const result = await callApi('entrarAlAlmacen', { familiaId });
+            if (result.success) {
+                document.getElementById('sala-espera').classList.add('hidden');
+                document.getElementById('almacen').classList.remove('hidden');
+                loadProductos();
+                updateCarro();
+            } else {
+                alert(result.error || 'No se pudo entrar al almacén.');
+            }
+        }
+
+        // Función para cargar productos
+        async function loadProductos() {
+            const productos = await callApi('getProductos');
+            if (productos.success) {
+                const container = document.getElementById('productos-almacen');
+                container.innerHTML = '';
+                productos.datos.forEach(producto => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center';
+                    div.innerHTML = `
+                        <span>${producto.nombre} (Disponible: ${producto.cantidad})</span>
+                        <div>
+                            <button onclick="moverProducto('${producto.id}', -1)" class="bg-red-500 text-white px-2 py-1 rounded">-</button>
+                            <span id="cantidad-${producto.id}">0</span>
+                            <button onclick="moverProducto('${producto.id}', 1)" class="bg-green-500 text-white px-2 py-1 rounded">+</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        // Función para mover productos
+        async function moverProducto(id, cantidad) {
+            const result = await callApi('moverProducto', { id, cantidad });
+            if (result.success) {
+                loadProductos();
+                updateCarro();
+            } else {
+                alert(result.error || 'No se pudo mover el producto.');
+            }
+        }
+
+        // Función para actualizar el carro
+        async function updateCarro() {
+            const carro = await callApi('getCarro');
+            if (carro.success) {
+                const container = document.getElementById('carro-items');
+                container.innerHTML = '';
+                carro.items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.textContent = `${item.nombre}: ${item.cantidad}`;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        // Función para confirmar la cooperación
+        async function confirmarCooperacion() {
+            const result = await callApi('confirmarCooperacion');
+            if (result.success) {
+                alert('Cooperación confirmada. ¡Gracias por su ayuda!');
+                document.getElementById('almacen').classList.add('hidden');
+                document.getElementById('sala-espera').classList.remove('hidden');
+                checkAlmacenStatus();
+                updateResumen();
+            } else {
+                alert(result.error || 'No se pudo confirmar la cooperación.');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('entrar-almacen').addEventListener('click', entrarAlmacen);
+        document.getElementById('confirmar-cooperacion').addEventListener('click', confirmarCooperacion);
+
+        // Inicialización
+        updateResumen();
+        loadFamilias();
+        checkAlmacenStatus();
+        setInterval(checkAlmacenStatus, 30000); // Verificar el estado del almacén cada 30 segundos
+    </script>
 </body>
 </html>
