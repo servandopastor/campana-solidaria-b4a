@@ -58,6 +58,7 @@
                 <p id="familia-actual" class="mb-2 font-medium"></p>
                 <div id="carro-items" class="space-y-2 mb-4"></div>
                 <button id="confirmar-cooperacion" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">Confirmar Cooperación</button>
+                <button id="devolver-productos" class="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600 mt-2">Devolver Productos y Salir</button>
             </div>
 
             <button id="volver-sala-espera" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Volver a Sala de Espera</button>
@@ -80,7 +81,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyikkPYMbJwNdtxkQqpitgoocqSL8cwQ3IP1KoXSMzXZcsxir9eQLEGnVCQlWm4gjFlaw/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbx42J3x6vdAg9FX575P5SyzIEscnGM7rQoRwgsN252p89CjuYP4-tdnybhz3dku4AwOEA/exec';
         let familiaActual = '';
 
         async function callApi(action, params = {}) {
@@ -209,19 +210,9 @@
                     div.className = 'flex justify-between items-center mb-2';
                     div.innerHTML = `
                         <span>${item.nombre}: ${item.cantidad}</span>
-                        <button onclick="devolverProducto('${item.id}', ${item.cantidad})" class="bg-red-500 text-white px-2 py-1 rounded">Devolver</button>
                     `;
                     container.appendChild(div);
                 });
-            }
-        }
-
-        async function devolverProducto(id, cantidad) {
-            const result = await callApi('devolverProducto', { id, cantidad });
-            if (result.success) {
-                await updateAll();
-            } else {
-                alert(result.error || 'No se pudo devolver el producto.');
             }
         }
 
@@ -232,9 +223,28 @@
                 document.getElementById('carro-items').innerHTML = '';
                 document.getElementById('familia-actual').textContent = '';
                 familiaActual = '';
+                document.getElementById('almacen').classList.add('hidden');
+                document.getElementById('sala-espera').classList.remove('hidden');
                 await updateAll();
             } else {
                 alert(result.error || 'No se pudo confirmar la cooperación.');
+            }
+        }
+
+        async function devolverProductos() {
+            if (confirm('¿Está seguro que desea devolver todos los productos y salir del almacén? Esta acción lo devolverá a la sala de espera.')) {
+                const result = await callApi('devolverProductos');
+                if (result.success) {
+                    alert('Productos devueltos exitosamente. Volviendo a la sala de espera.');
+                    document.getElementById('carro-items').innerHTML = '';
+                    document.getElementById('familia-actual').textContent = '';
+                    familiaActual = '';
+                    document.getElementById('almacen').classList.add('hidden');
+                    document.getElementById('sala-espera').classList.remove('hidden');
+                    await updateAll();
+                } else {
+                    alert(result.error || 'No se pudieron devolver los productos.');
+                }
             }
         }
 
@@ -267,6 +277,7 @@
         document.getElementById('entrar-almacen').addEventListener('click', entrarAlmacen);
         document.getElementById('mover-al-carro').addEventListener('click', moverAlCarro);
         document.getElementById('confirmar-cooperacion').addEventListener('click', confirmarCooperacion);
+        document.getElementById('devolver-productos').addEventListener('click', devolverProductos);
         document.getElementById('volver-sala-espera').addEventListener('click', volverSalaEspera);
 
         updateAll();
